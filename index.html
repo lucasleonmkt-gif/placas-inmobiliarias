@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Prompts - Flyers Inmobiliarios</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; background: #f8fafc; }
+    * { box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect } = React;
+
+    // ========================
+    // PROMPT GENERATOR
+    // ========================
+    const styleVariants = {
+      minimalista: [
+        {
+          name: 'Minimalismo con degradados (modern tech)',
+          rules: `COMPOSICION:
+- Imagen full bleed ocupando todo el fondo
+- Elementos flotando sobre la imagen (sin cajas rigidas multiples)
+- Maximo 2 overlays
+
+JERARQUIA:
+1. Imagen
+2. Precio (foco absoluto)
+3. CTA
+4. Texto secundario
+
+TIPOGRAFIA:
+- Sans-serif moderna (thin/regular)
+- Precio puede usar semi-bold
+- Tracking ligeramente abierto
+
+DEGRADADOS:
+- Solo en CTA, overlays o highlights
+- Gradientes suaves (linear o radial)
+- No usar degradados en todo el fondo
+
+GLASS (OBLIGATORIO):
+- Precio dentro de caja translucida
+- Fondo blanco 10-20% opacidad
+- Blur leve (10-20px)
+- Borde blanco sutil (1px, baja opacidad)
+- Border-radius 12-20px
+
+GLOW:
+- Solo en precio o CTA
+- Muy sutil, no neon
+
+CTA:
+- Boton redondeado
+- Sombra leve
+- Alto contraste
+
+ATMOSFERA:
+- Moderna, tecnologica, limpia
+- Sensacion de producto digital premium
+- Iluminacion suave con acentos brillantes
+- Estetica tipo app / fintech / SaaS
+
+RESTRICCIONES:
+- No mas de 3 bloques
+- No iconos
+- No layout tipo tarjeta multiple
+
+OBJETIVO: Look SaaS / fintech / moderno premium`
+        },
+        {
+          name: 'Minimalismo con profundidad (layered minimal)',
+          rules: `COMPOSICION:
+- 2-4 capas visuales (fondo + imagen + overlay + contenido)
+- Elementos superpuestos con separacion clara
+
+PROFUNDIDAD:
+- Sombras suaves (blur alto, baja opacidad)
+- Diferentes planos visuales
+
+JERARQUIA:
+- Fondo -> imagen -> contenido -> foco (precio)
+
+TIPOGRAFIA:
+- Limpia, regular/thin
+
+ELEMENTOS:
+- Overlays sutiles para separar capas
+- No usar bordes pesados
+
+ATMOSFERA:
+- Moderna, envolvente
+- Sensacion de profundidad y sistema visual
+- Ligera tridimensionalidad sin perder limpieza
+- Look digital avanzado
+
+RESTRICCIONES:
+- No mas de 4 capas
+- No saturar efectos
+
+OBJETIVO: Look moderno con depth (muy actual)`
+        },
+        {
+          name: 'Minimalismo editorial inmobiliario',
+          rules: `COMPOSICION:
+- Mucho espacio en blanco
+- Layout asimetrico
+- Imagen secundaria o recortada
+
+JERARQUIA:
+1. Headline tipografico dominante
+2. Imagen
+3. Precio pequeno
+
+TIPOGRAFIA:
+- Sans-serif thin
+- Tracking amplio
+- Headline ocupa 30-50% del ancho
+
+COLOR:
+- Blanco + negro + acento minimo
+
+ATMOSFERA:
+- Sofisticada, editorial
+- Sensacion de revista de arquitectura
+- Elegante, silenciosa, con aire
+- Estetica cultural y refinada
+
+RESTRICCIONES:
+- Sin efectos (no blur, no glow)
+- Sin CTA boton fuerte
+
+OBJETIVO: Look revista premium`
+        },
+        {
+          name: 'Minimalismo de ficha tecnica',
+          rules: `COMPOSICION:
+- Grilla invisible (2-3 columnas)
+- Informacion alineada
+
+JERARQUIA:
+1. Precio
+2. Datos tecnicos
+3. Imagen
+
+TIPOGRAFIA:
+- Regular para datos
+- Bold solo en precio
+
+ELEMENTOS:
+- Lineas finas (1px)
+- Iconos lineales opcionales (muy sutiles)
+
+ESPACIADO:
+- Consistente y repetitivo
+
+ATMOSFERA:
+- Tecnica, clara, confiable
+- Sensacion de orden y precision
+- Estetica profesional y racional
+- Baja carga emocional
+
+RESTRICCIONES:
+- No overlays
+- No efectos
+
+OBJETIVO: Look claro, estructurado`
+        },
+        {
+          name: 'Minimalismo luxury',
+          rules: `COMPOSICION:
+- Muy pocos elementos
+- Mucho espacio negativo
+
+JERARQUIA:
+1. Imagen cuidada
+2. Headline corto
+3. Precio discreto
+
+TIPOGRAFIA:
+- Thin elegante
+- Tracking amplio
+
+COLOR:
+- Muy limitado
+- Evitar saturacion
+
+IMAGEN:
+- Levemente desaturada o soft
+
+ATMOSFERA:
+- Exclusiva, sofisticada
+- Sensacion premium y de alto valor
+- Tranquila, silenciosa, refinada
+- Estetica de lujo discreto
+
+RESTRICCIONES:
+- Sin CTA agresivo
+- Sin efectos
+
+OBJETIVO: Look premium, exclusivo`
+        },
+        {
+          name: 'Minimalismo centrado en precio',
+          rules: `COMPOSICION:
+- Precio dominante ocupando gran parte del layout
+- Imagen secundaria o de fondo
+
+JERARQUIA:
+1. Precio (40-60% del foco visual)
+2. CTA
+3. Info minima
+
+TIPOGRAFIA:
+- Bold o semi-bold en precio
+- Resto pequeno
+
+COLOR:
+- Contraste alto en precio
+
+ATMOSFERA:
+- Comercial, directa
+- Sensacion de oportunidad
+- Clara, sin distracciones
+- Enfocada en accion inmediata
+
+RESTRICCIONES:
+- No multiples focos
+- No exceso de texto
+
+OBJETIVO: Alta conversion`
+        },
+        {
+          name: 'Minimalismo lifestyle',
+          rules: `COMPOSICION:
+- Imagen ocupa 70-80%
+- Texto minimo
+
+JERARQUIA:
+1. Imagen
+2. Headline emocional
+
+TIPOGRAFIA:
+- Light o regular
+
+ELEMENTOS:
+- Overlay leve (10-20%) solo para legibilidad
+
+ATMOSFERA:
+- Emocional, aspiracional
+- Sensacion de bienestar y estilo de vida
+- Calida, luminosa, humana
+- Enfoque en experiencia
+
+RESTRICCIONES:
+- No datos tecnicos visibles
+- No saturacion
+
+OBJETIVO: Enfoque aspiracional`
+        },
+        {
+          name: 'Minimalismo tipo card (UI moderno)',
+          rules: `COMPOSICION:
+- Contenedor unico tipo tarjeta
+- Imagen dentro del card
+
+ELEMENTOS:
+- Border-radius 12-20px
+- Sombra suave
+
+SECCIONES:
+- Imagen
+- Datos
+- CTA
+
+TIPOGRAFIA:
+- Estilo interfaz
+
+CTA:
+- Boton claro dentro del card
+
+ATMOSFERA:
+- Digital, moderna
+- Sensacion de app o plataforma
+- Clara y funcional
+- Interactiva y ordenada
+
+RESTRICCIONES:
+- No multiples cards
+- No exceso de efectos
+
+OBJETIVO: Look app moderna`
+        },
+        {
+          name: 'Minimalismo con overlay limpio',
+          rules: `COMPOSICION:
+- Imagen full bleed
+- Caja de texto encima (sin blur)
+
+TIPOGRAFIA:
+- Alto contraste
+
+ELEMENTOS:
+- Overlay solido o semi-transparente
+
+ATMOSFERA:
+- Clara, directa
+- Alta legibilidad
+- Equilibrada y sobria
+- Funcional sin distracciones
+
+RESTRICCIONES:
+- No glow
+- No glass
+- No efectos complejos
+
+OBJETIVO: Maxima legibilidad`
+        },
+        {
+          name: 'Minimalismo ultra clean (aireado)',
+          rules: `COMPOSICION:
+- 60-70% espacio vacio
+- Muy pocos elementos
+
+JERARQUIA:
+1. Imagen pequena o recortada
+2. Precio o headline
+
+TIPOGRAFIA:
+- Light
+
+ELEMENTOS:
+- Ninguno decorativo
+
+ATMOSFERA:
+- Extremadamente limpia
+- Silenciosa, sofisticada
+- Sensacion de calma y orden
+- Estetica contemporanea y pura
+
+RESTRICCIONES:
+- No iconos
+- No lineas
+- No efectos
+
+OBJETIVO: Simplicidad extrema y sofisticacion`
+        },
+      ],
+      moderno: [
+        {
+          name: 'Moderno geometrico bold',
+          rules: `COMPOSICION:
+- Formas geometricas grandes (rectangulos, circulos) como marcos o fondos
+- Imagen recortada en formas no convencionales
+- Bloques de color solido con opacidad alta (70-90%)
+
+JERARQUIA:
+1. Precio o headline impactante
+2. Imagen integrada en formas
+3. CTA prominente
+
+TIPOGRAFIA:
+- Geometric sans-serif, peso bold y extrabold
+- Contraste fuerte entre titulo y cuerpo
+- Tracking cerrado en headlines
+
+ELEMENTOS:
+- Acentos de color vibrantes
+- Sin bordes redondeados suaves, todo angular
+- Overlays de color solido
+
+ATMOSFERA:
+- Energica, urbana, impactante
+- Sensacion de marca fuerte
+- Estetica de agencia creativa
+- Alto impacto visual
+
+RESTRICCIONES:
+- No degradados suaves
+- No elementos organicos
+- No tipografia decorativa
+
+OBJETIVO: Maximo impacto visual con geometria`
+        },
+        {
+          name: 'Moderno duotone',
+          rules: `COMPOSICION:
+- Imagen tratada con efecto duotono usando colores de la paleta
+- Layout asimetrico con bloques de color solido
+- Alto contraste entre zonas claras y oscuras
+
+JERARQUIA:
+1. Imagen duotono como foco
+2. Headline bold sobre imagen
+3. Datos minimos
+
+TIPOGRAFIA:
+- Sans-serif bold para headline
+- Regular para secundarios
+- Maximo 2 pesos
+
+COLOR:
+- Maximo 2 colores dominantes + blanco/negro
+- Imagen procesada en duotono
+
+ATMOSFERA:
+- Urban, editorial
+- Sensacion de poster contemporaneo
+- Estetica de galeria de arte urbano
+- Impactante y memorable
+
+RESTRICCIONES:
+- No mas de 2 colores en la imagen
+- No ornamentos
+- No marcos clasicos
+
+OBJETIVO: Look editorial urbano con tratamiento fotografico`
+        },
+        {
+          name: 'Moderno split screen',
+          rules: `COMPOSICION:
+- Pantalla dividida en 2 mitades (vertical u horizontal)
+- Un lado: imagen de la propiedad
+- Otro lado: informacion sobre fondo de color solido
+
+JERARQUIA:
+1. Imagen (mitad visual)
+2. Precio destacado (mitad info)
+3. Datos organizados
+
+TIPOGRAFIA:
+- Geometrica, pesos variados
+- Precio en bold, datos en regular
+
+ELEMENTOS:
+- Linea divisoria gruesa o corte limpio
+- Composicion equilibrada y simetrica
+
+ATMOSFERA:
+- Ordenada, moderna, profesional
+- Sensacion de plataforma inmobiliaria
+- Clara y directa
+- Estetica de app de propiedades
+
+RESTRICCIONES:
+- Solo 2 mitades, no subdividir mas
+- No overlays sobre la imagen
+- No decoraciones
+
+OBJETIVO: Claridad y equilibrio visual`
+        },
+        {
+          name: 'Moderno con tipografia oversized',
+          rules: `COMPOSICION:
+- Headline en tipografia muy grande (ocupa 50%+ del espacio)
+- Letras cortadas por los bordes del canvas
+- Imagen integrada detras o dentro de las letras
+
+JERARQUIA:
+1. Tipografia gigante (protagonista absoluto)
+2. Imagen como textura o fondo
+3. Datos en tamano reducido y discreto
+
+TIPOGRAFIA:
+- Display sans-serif, peso black o extrabold
+- Tamano extremo para headline
+- Datos en light o regular pequeno
+
+ATMOSFERA:
+- De poster o cartel urbano
+- Sensacion de evento o lanzamiento
+- Maximo impacto tipografico
+- Estetica de branding contemporaneo
+
+RESTRICCIONES:
+- No mas de 2 lineas de headline
+- No iconos ni decoraciones
+- Imagen siempre subordinada al texto
+
+OBJETIVO: Impacto tipografico maximo`
+        },
+        {
+          name: 'Moderno grid dinamico',
+          rules: `COMPOSICION:
+- Grilla de bloques irregulares (no todos del mismo tamano)
+- Imagen en uno o dos bloques grandes
+- Datos distribuidos en bloques menores con fondos de color
+
+JERARQUIA:
+1. Imagen en bloque principal
+2. Precio en bloque destacado
+3. Datos en bloques secundarios
+
+TIPOGRAFIA:
+- Sans-serif, pesos variados por bloque
+- Bold en bloque de precio
+- Regular en datos
+
+ELEMENTOS:
+- Bordes definidos entre bloques (2-3px)
+- Colores de la paleta en cada bloque
+- Sensacion de dashboard
+
+ATMOSFERA:
+- De interfaz moderna
+- Sensacion de plataforma tech
+- Organizada y visual
+- Estetica de dashboard o panel
+
+RESTRICCIONES:
+- Maximo 6 bloques
+- No overlays
+- No mezclar estilos de borde
+
+OBJETIVO: Look dashboard / interfaz moderna`
+        },
+        {
+          name: 'Moderno neon/glow',
+          rules: `COMPOSICION:
+- Fondo oscuro (negro o color muy oscuro de la paleta)
+- Imagen con overlay oscuro para integrar
+- Elementos clave con efecto luminoso
+
+JERARQUIA:
+1. Precio con glow
+2. CTA luminoso
+3. Imagen como ambiente
+
+TIPOGRAFIA:
+- Sans-serif light sobre fondo oscuro
+- Precio puede tener weight medio
+
+ELEMENTOS:
+- Acentos con efecto glow usando colores de la paleta
+- Bordes luminosos en precio y CTA
+- Maximo 2-3 elementos con glow
+
+ATMOSFERA:
+- Tech y nocturna
+- Sensacion de producto digital premium
+- Futurista y llamativa
+- Estetica de gaming o fintech nocturna
+
+RESTRICCIONES:
+- No glow en todo, solo en 2-3 elementos
+- No colores claros de fondo
+- No tipografia decorativa
+
+OBJETIVO: Look tech nocturno premium`
+        },
+        {
+          name: 'Moderno brutalist',
+          rules: `COMPOSICION:
+- Bloques apilados o superpuestos intencionalmente
+- Layout crudo y directo
+- Texto rotado o en angulo en algunos elementos
+
+JERARQUIA:
+1. Headline brutal (grande, bold)
+2. Precio directo
+3. Imagen como elemento mas
+
+TIPOGRAFIA:
+- Bold o black, sin refinamiento
+- Puede mezclar tamanos extremos
+- Tracking apretado
+
+ELEMENTOS:
+- Bordes gruesos (3-5px)
+- Colores planos sin degradados
+- Sombras duras si las hay (no suaves)
+
+ATMOSFERA:
+- Cruda, directa, anti-decorativa
+- Sensacion de manifiesto o protesta
+- Estetica de zine o punk grafico
+- Honesta y sin pretension
+
+RESTRICCIONES:
+- No sombras suaves
+- No bordes redondeados
+- No degradados
+
+OBJETIVO: Look brutalist / anti-design`
+        },
+        {
+          name: 'Moderno con bandas de color',
+          rules: `COMPOSICION:
+- Franjas horizontales o verticales de color de la paleta
+- Texto alineado dentro de las bandas
+- Imagen contenida en una de las bandas o como fondo
+
+JERARQUIA:
+1. Banda principal con precio
+2. Banda con imagen
+3. Banda con datos
+
+TIPOGRAFIA:
+- Bold en banda de color
+- Regular en fondo neutro
+- Contraste por zona
+
+ELEMENTOS:
+- Transiciones limpias entre bandas (sin degradado)
+- Maximo 3-4 bandas
+- Sensacion de senaletica
+
+ATMOSFERA:
+- Corporativa, moderna
+- Sensacion de branding sistematico
+- Estetica de senaletica o identidad visual
+- Ordenada y reconocible
+
+RESTRICCIONES:
+- No mas de 4 bandas
+- No mezclar orientaciones
+- No efectos dentro de bandas
+
+OBJETIVO: Look de identidad corporativa moderna`
+        },
+        {
+          name: 'Moderno con marcos flotantes',
+          rules: `COMPOSICION:
+- Elementos dentro de marcos con borde visible
+- Marcos desplazados o superpuestos entre si
+- Fondo limpio o de color solido
+
+JERARQUIA:
+1. Marco principal con imagen
+2. Marco con precio
+3. Marco con datos
+
+TIPOGRAFIA:
+- Geometrica sans-serif
+- Pesos variados por marco
+
+ELEMENTOS:
+- Sombras duras o sin sombras
+- Espaciado intencional entre marcos
+- Sensacion de collage estructurado
+
+ATMOSFERA:
+- Creativa, artistica
+- Sensacion de composicion diseñada
+- Estetica de estudio de diseno
+- Dinamica y contemporanea
+
+RESTRICCIONES:
+- Maximo 4 marcos
+- No marcos perfectamente alineados
+- No fill en marcos (solo borde)
+
+OBJETIVO: Look de collage estructurado moderno`
+        },
+        {
+          name: 'Moderno editorial revista',
+          rules: `COMPOSICION:
+- Layout tipo pagina de revista de arquitectura
+- Columnas de texto bien definidas
+- Imagen grande con caption pequeno
+
+JERARQUIA:
+1. Imagen editorial
+2. Headline en tipografia variada
+3. Datos en columnas
+
+TIPOGRAFIA:
+- Serif para headline, sans-serif para body
+- Variacion de pesos elegante
+- Numeracion o etiquetas de seccion
+
+ELEMENTOS:
+- Lineas finas separando secciones
+- Sensacion de publicacion impresa
+
+ATMOSFERA:
+- De publicacion de alta gama
+- Sensacion de revista de arquitectura
+- Estetica cultural y editorial
+- Profesional y aspiracional
+
+RESTRICCIONES:
+- No efectos digitales
+- No iconos
+- No CTA tipo boton
+
+OBJETIVO: Look de revista de arquitectura premium`
+        },
+      ],
+      lujo: [
+        {
+          name: 'Lujo clasico con oro',
+          rules: `COMPOSICION:
+- Fondo oscuro (negro, azul marino profundo)
+- Imagen con marco dorado fino
+- Elementos centrados y simetricos
+
+JERARQUIA:
+1. Imagen enmarcada
+2. Precio con acento dorado
+3. Headline elegante
+
+TIPOGRAFIA:
+- Serif elegante, peso regular o light
+- Tracking generoso
+- Dorado en precio o headline
+
+ELEMENTOS:
+- Acentos dorados (bordes, lineas, tipografia)
+- Ornamentos clasicos sutiles (lineas decorativas, motivos geometricos)
+- Espaciado generoso entre elementos
+
+ATMOSFERA:
+- Exclusiva, tradicional
+- Sensacion de club privado o marca heritage
+- Estetica de joyeria o relojeria
+- Opulencia controlada
+
+RESTRICCIONES:
+- No colores brillantes fuera del dorado
+- No tipografia moderna/geometrica
+- No elementos casuales
+
+OBJETIVO: Look clasico de lujo con acentos dorados`
+        },
+        {
+          name: 'Lujo con marmol y texturas',
+          rules: `COMPOSICION:
+- Fondo o elementos con textura de marmol sutil
+- Imagen enmarcada con borde fino
+- Jerarquia clara y espaciada
+
+JERARQUIA:
+1. Headline refinado
+2. Imagen enmarcada
+3. Precio y datos discretos
+
+TIPOGRAFIA:
+- Serif refinada con tracking amplio
+- Pesos light a regular
+- Sin bold agresivo
+
+ELEMENTOS:
+- Texturas de marmol como fondo o acento
+- Colores neutros: blanco, crema, gris, negro, dorado
+- Sin elementos graficos innecesarios
+
+ATMOSFERA:
+- Material, premium, tactil
+- Sensacion de superficie real
+- Estetica de showroom o galeria
+- Sofisticacion palpable
+
+RESTRICCIONES:
+- No texturas digitales obvias
+- No mas de 2 texturas diferentes
+- No colores saturados
+
+OBJETIVO: Look premium con materialidad`
+        },
+        {
+          name: 'Lujo fotografico inmersivo',
+          rules: `COMPOSICION:
+- Imagen ocupa 85-95% del layout
+- Overlay oscuro gradual (gradient de negro 60-80%)
+- Texto flotando sobre el overlay
+
+JERARQUIA:
+1. Imagen inmersiva
+2. Headline sobre overlay
+3. Precio minimo
+
+TIPOGRAFIA:
+- Serif o sans-serif thin
+- Blanco o dorado sobre oscuro
+- Muy poco texto
+
+ELEMENTOS:
+- Overlay gradiente oscuro
+- Logo pequeno pero visible
+- Nada mas
+
+ATMOSFERA:
+- Cinematografica, aspiracional
+- Sensacion de pelicula o documental
+- Estetica de fotografia de autor
+- Inmersion total
+
+RESTRICCIONES:
+- No marcos
+- No cajas de texto
+- No mas de 3 lineas de texto
+- No iconos
+
+OBJETIVO: Look cinematografico inmersivo`
+        },
+        {
+          name: 'Lujo art deco',
+          rules: `COMPOSICION:
+- Patrones geometricos art deco (lineas, abanicos, arcos)
+- Imagen centrada con marco estilizado
+- Simetria marcada
+
+JERARQUIA:
+1. Marco decorativo art deco
+2. Imagen centrada
+3. Headline display
+
+TIPOGRAFIA:
+- Display o deco para headline
+- Elegante para datos
+- Tracking muy amplio
+
+ELEMENTOS:
+- Bordes decorativos con motivos deco
+- Paleta: negro, dorado, blanco
+- Patrones en esquinas o bordes
+
+ATMOSFERA:
+- Glamour retro de alta gama
+- Sensacion de hotel boutique o casino elegante
+- Estetica de los años 20 modernizada
+- Sofisticacion dramatica
+
+RESTRICCIONES:
+- No mezclar con estilos modernos
+- No tipografia sans-serif basica
+- No elementos minimalistas
+
+OBJETIVO: Look art deco glamoroso`
+        },
+        {
+          name: 'Lujo con tipografia protagonista',
+          rules: `COMPOSICION:
+- Headline serif grande y elegante como foco
+- Imagen en segundo plano o recortada
+- Fondo oscuro o neutro premium
+
+JERARQUIA:
+1. Headline tipografico (protagonista absoluto)
+2. Precio con tipografia diferente
+3. Imagen como soporte
+
+TIPOGRAFIA:
+- Serif grande, tracking muy amplio
+- Letras como elemento visual principal
+- Sin iconos ni graficos extra
+
+ATMOSFERA:
+- De marca de moda o joyeria
+- Sensacion de identidad de lujo
+- Estetica de portada de Vogue
+- Tipografia como arte
+
+RESTRICCIONES:
+- No mas de 2 familias tipograficas
+- No elementos graficos extra
+- No CTA tipo boton
+
+OBJETIVO: Look de marca de lujo tipografica`
+        },
+        {
+          name: 'Lujo white & clean',
+          rules: `COMPOSICION:
+- Fondo predominantemente blanco o crema
+- Imagen con bordes generosos (mucho aire)
+- Lineas divisorias finas y discretas
+
+JERARQUIA:
+1. Imagen limpia y centrada
+2. Headline serif fino
+3. Precio y datos discretos
+
+TIPOGRAFIA:
+- Serif fina, color negro o gris oscuro
+- Light a regular
+- Tracking amplio
+
+ELEMENTOS:
+- Acentos de color minimos (solo en CTA o precio)
+- Maxima limpieza visual
+- Sensacion de galeria de arte
+
+ATMOSFERA:
+- De galeria de arte contemporaneo
+- Sensacion de espacio y luz
+- Estetica de museo
+- Lujo a traves de la simplicidad
+
+RESTRICCIONES:
+- No fondos oscuros
+- No texturas
+- No ornamentos
+
+OBJETIVO: Look galeria de arte / lujo silencioso`
+        },
+        {
+          name: 'Lujo con contraste dramatico',
+          rules: `COMPOSICION:
+- Fondo negro puro, texto blanco puro
+- Imagen en blanco y negro o muy desaturada
+- Un unico acento de color en precio o CTA
+
+JERARQUIA:
+1. Contraste B/N como impacto
+2. Acento de color en precio
+3. Imagen desaturada
+
+TIPOGRAFIA:
+- Serif bold para headline
+- Regular para datos
+- Blanco sobre negro
+
+ELEMENTOS:
+- Pocos elementos, maximo impacto
+- Un solo punto de color
+- Composicion centrada y simetrica
+
+ATMOSFERA:
+- De fotografia de autor
+- Sensacion de pelicula noir
+- Estetica dramatica y contundente
+- Poder a traves del contraste
+
+RESTRICCIONES:
+- No mas de 1 color de acento
+- No degradados
+- No elementos decorativos
+
+OBJETIVO: Look dramatico B/N con acento`
+        },
+        {
+          name: 'Lujo con bordes y marcos dobles',
+          rules: `COMPOSICION:
+- Marco exterior decorativo (doble linea, fino)
+- Marco interior para la imagen
+- Espacio entre marcos con color o textura premium
+
+JERARQUIA:
+1. Sistema de marcos como estructura
+2. Imagen enmarcada
+3. Datos organizados con separadores
+
+TIPOGRAFIA:
+- Clasica, bien espaciada
+- Serif regular
+- Tracking generoso
+
+ELEMENTOS:
+- Logo integrado en la estructura del marco
+- Separadores finos entre datos
+- Sensacion de invitacion formal
+
+ATMOSFERA:
+- De invitacion formal o certificado
+- Sensacion de documento oficial premium
+- Estetica de papeleria de lujo
+- Estructura como lujo
+
+RESTRICCIONES:
+- No mas de 3 niveles de marco
+- No colores brillantes
+- No tipografia moderna
+
+OBJETIVO: Look de invitacion o certificado premium`
+        },
+        {
+          name: 'Lujo editorial de arquitectura',
+          rules: `COMPOSICION:
+- Layout tipo revista de arquitectura premium
+- Imagen grande con tratamiento fotografico cuidado
+- Columna lateral con informacion tecnica
+
+JERARQUIA:
+1. Imagen editorial grande
+2. Headline serif
+3. Columna de datos
+
+TIPOGRAFIA:
+- Serif para titulos, sans-serif para datos
+- Variacion elegante de pesos
+- Lineas guia visibles sutilmente
+
+ELEMENTOS:
+- Paleta contenida: 2 colores + neutros
+- Lineas finas como estructura
+- Sensacion de publicacion de diseno
+
+ATMOSFERA:
+- De publicacion de arquitectura
+- Sensacion de AD Magazine o Wallpaper
+- Estetica editorial premium
+- Profesional y aspiracional
+
+RESTRICCIONES:
+- No efectos digitales
+- No iconos
+- No CTA agresivo
+
+OBJETIVO: Look editorial de arquitectura premium`
+        },
+        {
+          name: 'Lujo con efecto glass premium',
+          rules: `COMPOSICION:
+- Imagen full bleed como base
+- Caja de informacion flotante con efecto vidrio
+- Elementos minimos fuera de la caja glass
+
+JERARQUIA:
+1. Imagen de fondo inmersiva
+2. Caja glass con datos principales
+3. Logo y CTA
+
+TIPOGRAFIA:
+- Sans-serif light, color blanco
+- Peso medio en precio
+- Tracking abierto
+
+ELEMENTOS:
+- Glass morphism: fondo translucido, blur, borde luminoso
+- Acentos dorados o del color principal en bordes
+- Sombra muy sutil en la caja glass
+
+ATMOSFERA:
+- Moderna y sofisticada
+- Sensacion de interfaz premium
+- Estetica de app de lujo
+- Fusion de tecnologia y exclusividad
+
+RESTRICCIONES:
+- Solo 1 caja glass principal
+- No multiples efectos
+- No colores brillantes fuera de acentos
+
+OBJETIVO: Look glass morphism premium`
+        },
+      ],
+      rustico: [
+        {
+          name: 'Rustico con texturas naturales',
+          rules: `COMPOSICION:
+- Fondo con textura de madera, piedra o papel kraft
+- Imagen con bordes suaves o efecto polaroid
+- Elementos organicos distribuidos
+
+JERARQUIA:
+1. Imagen como foto enmarcada
+2. Headline calido
+3. Precio y datos
+
+TIPOGRAFIA:
+- Slab-serif o hand-drawn
+- Pesos regulares
+- Tracking natural
+
+ELEMENTOS:
+- Iconografia simple y organica (hojas, casas, arboles)
+- Colores tierra: marron, beige, verde oliva, terracota
+- Sin elementos digitales o tech
+
+ATMOSFERA:
+- Calida, artesanal
+- Sensacion de mercado local o feria
+- Estetica de taller o estudio
+- Autenticidad y calidez
+
+RESTRICCIONES:
+- No elementos digitales
+- No gradientes artificiales
+- No tipografia geometrica
+
+OBJETIVO: Look artesanal con texturas naturales`
+        },
+        {
+          name: 'Rustico campestre',
+          rules: `COMPOSICION:
+- Imagen dominante de paisaje o entorno natural
+- Overlay calido (sepia o tierra, 15-25%)
+- Marco simple o sin marco
+
+JERARQUIA:
+1. Imagen de paisaje/entorno
+2. Headline evocador
+3. Precio minimo
+
+TIPOGRAFIA:
+- Serif clasica o handwritten
+- Light a regular
+- Texto breve y emocional
+
+COLOR:
+- Suaves y desaturados
+- Tonos tierra y verdes
+
+ATMOSFERA:
+- De campo, naturaleza, tranquilidad
+- Sensacion de escapada rural
+- Estetica de postal de viaje
+- Paz y conexion con la naturaleza
+
+RESTRICCIONES:
+- No texto excesivo
+- No colores saturados
+- No elementos urbanos
+
+OBJETIVO: Look campestre y natural`
+        },
+        {
+          name: 'Rustico con elementos hand-drawn',
+          rules: `COMPOSICION:
+- Ilustraciones o bordes dibujados a mano
+- Imagen enmarcada con trazos irregulares
+- Fondo crema, beige o papel texturado
+
+JERARQUIA:
+1. Ilustraciones como marco
+2. Imagen de la propiedad
+3. Datos en tipografia handwritten
+
+TIPOGRAFIA:
+- Handwritten o script casual
+- Regular para datos legibles
+- Mezcla controlada
+
+ELEMENTOS:
+- Decoraciones botanicas (ramas, hojas, flores)
+- Colores apagados y naturales
+- Trazos irregulares y organicos
+
+ATMOSFERA:
+- De invitacion hecha a mano
+- Sensacion de craft y cuidado personal
+- Estetica de papeleria artesanal
+- Unica y personal
+
+RESTRICCIONES:
+- No elementos digitales perfectos
+- No tipografia geometrica
+- No fondos solidos puros
+
+OBJETIVO: Look handmade artesanal`
+        },
+        {
+          name: 'Rustico industrial',
+          rules: `COMPOSICION:
+- Texturas de metal oxidado, ladrillo o concreto
+- Layout estructurado en bloques
+- Imagen con tratamiento ligeramente desaturado
+
+JERARQUIA:
+1. Headline bold industrial
+2. Imagen como elemento
+3. Datos en bloques
+
+TIPOGRAFIA:
+- Condensada bold o stencil
+- Mayusculas en headline
+- Regular para datos
+
+ELEMENTOS:
+- Lineas gruesas, remaches, sellos
+- Paleta oscura: gris, negro, oxido, cobre
+- Elementos graficos industriales
+
+ATMOSFERA:
+- De loft o espacio reconvertido
+- Sensacion de fabrica renovada
+- Estetica industrial chic
+- Cruda pero sofisticada
+
+RESTRICCIONES:
+- No colores pasteles
+- No tipografia delicada
+- No ornamentos clasicos
+
+OBJETIVO: Look industrial chic`
+        },
+        {
+          name: 'Rustico mediterraneo',
+          rules: `COMPOSICION:
+- Composicion abierta y aireada
+- Imagen luminosa y calida
+- Bordes o marcos con motivos de azulejo o arcada
+
+JERARQUIA:
+1. Imagen luminosa
+2. Headline en serif clasica
+3. Detalles decorativos
+
+TIPOGRAFIA:
+- Serif clasica, peso regular
+- Tracking natural
+- Calidez en la eleccion de fuente
+
+COLOR:
+- Terracota, azul mediterraneo, blanco cal, oliva
+
+ELEMENTOS:
+- Detalles decorativos sutiles (arcos, curvas)
+- Motivos de costa y tradicion
+
+ATMOSFERA:
+- De costa, sol y tradicion
+- Sensacion de villa mediterranea
+- Estetica de Santorini o Costa Amalfitana
+- Luminosa y acogedora
+
+RESTRICCIONES:
+- No colores frios
+- No elementos nordicos o industriales
+- No tipografia moderna
+
+OBJETIVO: Look mediterraneo calido`
+        },
+        {
+          name: 'Rustico vintage',
+          rules: `COMPOSICION:
+- Tratamiento fotografico vintage (tonos sepia, grano)
+- Bordes ornamentales de epoca
+- Fondo envejecido o con textura de papel antiguo
+
+JERARQUIA:
+1. Imagen vintage
+2. Headline retro
+3. Badge o sello con precio
+
+TIPOGRAFIA:
+- Retro o art nouveau
+- Variacion de pesos decorativa
+- Tracking generoso
+
+ELEMENTOS:
+- Sellos o badges con informacion clave
+- Paleta apagada: crema, marron, verde musgo
+- Ornamentos de epoca
+
+ATMOSFERA:
+- De postal antigua o anuncio clasico
+- Sensacion de nostalgia y tradicion
+- Estetica de tienda de antiguedades
+- Historia y caracter
+
+RESTRICCIONES:
+- No elementos modernos
+- No colores neon o brillantes
+- No tipografia sans-serif moderna
+
+OBJETIVO: Look vintage nostalgico`
+        },
+        {
+          name: 'Rustico con bloques de madera',
+          rules: `COMPOSICION:
+- Fondo de madera clara o oscura
+- Contenedores tipo pizarra o cartel de madera
+- Imagen principal enmarcada como foto colgada
+
+JERARQUIA:
+1. Imagen como foto en pared de madera
+2. Precio en pizarra
+3. Datos en lista
+
+TIPOGRAFIA:
+- Chalk o sans-serif rustica
+- Contraste sobre madera
+- Regular para legibilidad
+
+ELEMENTOS:
+- Iconos simples tipo tiza
+- Colores contrastantes sobre la madera
+- Sensacion de tablero de anuncios
+
+ATMOSFERA:
+- De mercado local o cafe
+- Sensacion de comunidad y cerania
+- Estetica de pizarra de bar
+- Casual y acogedora
+
+RESTRICCIONES:
+- No efectos digitales
+- No tipografia formal
+- No colores neon
+
+OBJETIVO: Look de tablero de anuncios rustico`
+        },
+        {
+          name: 'Rustico con fotografia hero',
+          rules: `COMPOSICION:
+- Imagen ocupa 75-85% del layout
+- Barra inferior o lateral con fondo de textura natural
+- Texto sobre barra texturada (no sobre imagen)
+
+JERARQUIA:
+1. Imagen hero de la propiedad
+2. Barra con precio y ubicacion
+3. Info minima
+
+TIPOGRAFIA:
+- Slab-serif, peso medio
+- Legible sobre textura
+- Contraste garantizado
+
+ELEMENTOS:
+- Barra con textura natural (madera, lino, kraft)
+- Colores tierra para la barra
+- Informacion minima
+
+ATMOSFERA:
+- De catalogo de campo
+- Sensacion de propiedad en su entorno
+- Estetica de inmobiliaria rural
+- Protagonismo de la propiedad
+
+RESTRICCIONES:
+- No overlay sobre la imagen
+- No mas de 3 datos
+- No efectos
+
+OBJETIVO: Look de catalogo rural con foto protagonista`
+        },
+        {
+          name: 'Rustico organico minimalista',
+          rules: `COMPOSICION:
+- Fondo beige o crema uniforme
+- Imagen centrada con mucho aire
+- Decoraciones botanicas minimas
+
+JERARQUIA:
+1. Imagen limpia
+2. Headline serif delicado
+3. Precio discreto
+
+TIPOGRAFIA:
+- Serif delicada, tracking amplio
+- Light a regular
+- Sensacion organica
+
+ELEMENTOS:
+- Una rama, una hoja como decoracion
+- Lineas finas color tierra como separadores
+- Paleta reducida: 2 tonos tierra + blanco
+
+ATMOSFERA:
+- De marca organica premium
+- Sensacion de tienda eco
+- Estetica de cosmetics natural
+- Minimalismo con alma
+
+RESTRICCIONES:
+- No mas de 1-2 elementos decorativos
+- No colores saturados
+- No tipografia bold
+
+OBJETIVO: Look organico premium minimalista`
+        },
+        {
+          name: 'Rustico con mapa o ubicacion',
+          rules: `COMPOSICION:
+- Elemento grafico de mapa estilizado o brujula
+- Imagen de la propiedad como elemento secundario
+- Enfasis en la ubicacion y el entorno
+
+JERARQUIA:
+1. Elemento de ubicacion/mapa
+2. Headline sobre el entorno
+3. Imagen y precio
+
+TIPOGRAFIA:
+- Serif para headline, sans-serif para datos
+- Regular a medio
+- Legible y clara
+
+ELEMENTOS:
+- Mapa estilizado o brujula como recurso visual
+- Colores tierra con acento en verde o azul
+- Fondo texturado sutil (lino, papel)
+
+ATMOSFERA:
+- De aventura y descubrimiento
+- Sensacion de explorar un lugar nuevo
+- Estetica de guia de viaje
+- Curiosidad y emocion
+
+RESTRICCIONES:
+- No mapa realista, siempre estilizado
+- No exceso de datos
+- No elementos urbanos
+
+OBJETIVO: Look de guia de viaje / descubrimiento`
+        },
+      ],
+      elegante: [
+        {
+          name: 'Elegante clasico simetrico',
+          rules: `COMPOSICION:
+- Composicion perfectamente centrada y simetrica
+- Imagen enmarcada con borde fino
+- Espaciado generoso y uniforme
+
+JERARQUIA:
+1. Imagen centrada
+2. Headline serif clasico
+3. Precio y datos alineados
+
+TIPOGRAFIA:
+- Serif clasica, peso regular
+- Tracking natural a amplio
+- Maxima legibilidad
+
+ELEMENTOS:
+- Lineas divisorias finas (hairline) como separadores
+- Paleta contenida: crema, gris, negro, un acento sutil
+- Sensacion de tarjeta de presentacion
+
+ATMOSFERA:
+- De tarjeta de presentacion premium
+- Sensacion de formalidad y confianza
+- Estetica de despacho de abogados
+- Orden y profesionalismo
+
+RESTRICCIONES:
+- No asimetria
+- No elementos casuales
+- No tipografia moderna
+
+OBJETIVO: Look clasico simetrico y profesional`
+        },
+        {
+          name: 'Elegante con gradientes suaves',
+          rules: `COMPOSICION:
+- Degradados sutiles de colores de la paleta (transiciones largas)
+- Imagen con blend suave hacia el fondo
+- Sin bordes duros entre secciones
+
+JERARQUIA:
+1. Atmosfera cromatica (gradiente como fondo)
+2. Headline sobre gradiente
+3. Imagen integrada
+
+TIPOGRAFIA:
+- Sans-serif light o serif thin
+- Sobre areas de gradiente suave
+- Contraste garantizado
+
+ELEMENTOS:
+- Transiciones cromaticas fluidas
+- Sin marcos ni lineas duras
+- Suavidad en todo
+
+ATMOSFERA:
+- Eterea, sofisticada
+- Sensacion de atardecer o aurora
+- Estetica de perfumeria
+- Suave y envolvente
+
+RESTRICCIONES:
+- No bordes duros
+- No bloques de color solido
+- No tipografia bold agresiva
+
+OBJETIVO: Look etereo con gradientes suaves`
+        },
+        {
+          name: 'Elegante con columnas editoriales',
+          rules: `COMPOSICION:
+- Layout a 2-3 columnas bien definidas
+- Imagen en columna principal (mas ancha)
+- Datos en columna secundaria
+
+JERARQUIA:
+1. Imagen en columna ancha
+2. Headline serif
+3. Datos en columna estrecha
+
+TIPOGRAFIA:
+- Serif para titulos, sans-serif para cuerpo
+- Alineacion justificada o izquierda
+- Numeracion de detalles
+
+ELEMENTOS:
+- Separadores finos entre columnas
+- Sensacion de revista de decoracion
+- Estructura editorial clara
+
+ATMOSFERA:
+- De revista de decoracion
+- Sensacion de Architectural Digest
+- Estetica editorial sofisticada
+- Informativa y bella
+
+RESTRICCIONES:
+- No mas de 3 columnas
+- No elementos fuera de la grilla
+- No efectos digitales
+
+OBJETIVO: Look editorial de revista de decoracion`
+        },
+        {
+          name: 'Elegante con marco ornamental',
+          rules: `COMPOSICION:
+- Marco decorativo fino pero elaborado
+- Interior del marco limpio y espacioso
+- Imagen centrada dentro del marco
+
+JERARQUIA:
+1. Marco como estructura principal
+2. Imagen centrada
+3. Datos dentro del marco
+
+TIPOGRAFIA:
+- Serif clasica
+- Regular a light
+- Bien espaciada
+
+ELEMENTOS:
+- Ornamentos en esquinas o centro superior/inferior
+- Paleta neutra con acento metalico sutil
+- Sensacion de pieza enmarcada
+
+ATMOSFERA:
+- De certificado o pieza enmarcada
+- Sensacion de diploma o reconocimiento
+- Estetica de marcos antiguos
+- Valor a traves del enmarcado
+
+RESTRICCIONES:
+- No marcos gruesos
+- No colores brillantes
+- No tipografia moderna
+
+OBJETIVO: Look de pieza enmarcada elegante`
+        },
+        {
+          name: 'Elegante fotografico con velo',
+          rules: `COMPOSICION:
+- Imagen full bleed con overlay claro (blanco 20-35%)
+- Texto oscuro sobre el velo claro
+- Layout simple: headline arriba, datos abajo
+
+JERARQUIA:
+1. Imagen velada como atmosfera
+2. Headline elegante
+3. Datos minimos
+
+TIPOGRAFIA:
+- Serif elegante, bien espaciada
+- Color oscuro sobre velo claro
+- Light a regular
+
+ELEMENTOS:
+- Sin marcos ni bordes
+- Solo overlay claro
+- Muy pocos elementos graficos
+
+ATMOSFERA:
+- De luz natural y suavidad
+- Sensacion de manana luminosa
+- Estetica de fotografia fine art
+- Delicada y serena
+
+RESTRICCIONES:
+- No overlay oscuro
+- No marcos
+- No efectos digitales
+
+OBJETIVO: Look fotografico suave con velo claro`
+        },
+        {
+          name: 'Elegante bicolor',
+          rules: `COMPOSICION:
+- Layout dividido en dos tonos (claro/oscuro, crema/grafito)
+- Imagen en una de las mitades con blend suave
+- Datos distribuidos entre ambas zonas
+
+JERARQUIA:
+1. Contraste bicolor como estructura
+2. Imagen integrada
+3. Precio con color de acento
+
+TIPOGRAFIA:
+- Cambia de color segun la zona (claro sobre oscuro, oscuro sobre claro)
+- Serif o sans-serif elegante
+- Consistencia de familia
+
+ELEMENTOS:
+- Transicion limpia o en diagonal suave
+- Un color de acento para CTA o precio
+- Sensacion de contraste refinado
+
+ATMOSFERA:
+- De contraste refinado
+- Sensacion de yin-yang visual
+- Estetica de moda editorial
+- Equilibrio y sofisticacion
+
+RESTRICCIONES:
+- Solo 2 tonos base
+- No mas de 1 acento
+- No degradados complejos
+
+OBJETIVO: Look bicolor sofisticado`
+        },
+        {
+          name: 'Elegante con tipografia display',
+          rules: `COMPOSICION:
+- Headline en tipografia display serif grande
+- Imagen como fondo o bloque secundario
+- Mucho espacio alrededor del headline
+
+JERARQUIA:
+1. Headline display (protagonista)
+2. Imagen de soporte
+3. Datos en sans-serif light
+
+TIPOGRAFIA:
+- Display serif con ligatures o swashes
+- Light sans-serif para body
+- Paleta monocromatica + acento
+
+ATMOSFERA:
+- De portada de libro o invitacion
+- Sensacion de evento especial
+- Estetica tipografica refinada
+- Impacto a traves de las letras
+
+RESTRICCIONES:
+- No mas de 2 familias tipograficas
+- No iconos
+- No efectos digitales
+
+OBJETIVO: Look de invitacion o portada editorial`
+        },
+        {
+          name: 'Elegante con iconografia fina',
+          rules: `COMPOSICION:
+- Iconos de linea fina (1px) para features (m2, habitaciones, banos)
+- Imagen principal arriba o a un lado
+- Lineas separadoras entre secciones
+
+JERARQUIA:
+1. Imagen de la propiedad
+2. Iconos + datos tecnicos
+3. Precio y CTA
+
+TIPOGRAFIA:
+- Regular, limpia
+- Sans-serif para datos
+- Serif para headline
+
+ELEMENTOS:
+- Iconos alineados horizontalmente o en grilla
+- Colores neutros con acento en iconos
+- Sensacion de ficha premium
+
+ATMOSFERA:
+- De ficha inmobiliaria premium
+- Sensacion de plataforma de lujo
+- Estetica de Sotheby's o Christie's
+- Informativa y elegante
+
+RESTRICCIONES:
+- Iconos solo de linea fina
+- No iconos rellenos
+- No mas de 6 iconos
+
+OBJETIVO: Look de ficha inmobiliaria de lujo`
+        },
+        {
+          name: 'Elegante con fondo texturado',
+          rules: `COMPOSICION:
+- Fondo con textura sutil (lino, papel fino, tela)
+- Imagen con borde suave o vineteo
+- Elementos decorativos minimos
+
+JERARQUIA:
+1. Textura como ambiente
+2. Imagen con vineteo
+3. Headline y precio sobre textura
+
+TIPOGRAFIA:
+- Serif clasica sobre fondo texturado
+- Armonia entre textura y tipografia
+- Regular a light
+
+ELEMENTOS:
+- Una linea, un punto como decoracion maxima
+- Paleta calida y apagada
+- Sensacion de materialidad
+
+ATMOSFERA:
+- De materialidad y tacto
+- Sensacion de papel hecho a mano
+- Estetica de papeleria premium
+- Calidez sofisticada
+
+RESTRICCIONES:
+- No texturas digitales obvias
+- No mas de 1 textura
+- No colores brillantes
+
+OBJETIVO: Look de papeleria premium texturada`
+        },
+        {
+          name: 'Elegante moderno hibrido',
+          rules: `COMPOSICION:
+- Layout limpio con toques contemporaneos
+- Imagen con tratamiento profesional
+- Fondo blanco o muy claro
+
+JERARQUIA:
+1. Imagen profesional
+2. Headline serif
+3. Datos en sans-serif
+
+TIPOGRAFIA:
+- Serif para titulos, sans-serif para datos
+- Mezcla controlada y armonica
+- Pesos variados con criterio
+
+ELEMENTOS:
+- Un elemento de color como acento (linea, boton, subrayado)
+- Un angulo o superposicion sutil
+- Datos bien organizados
+
+ATMOSFERA:
+- De inmobiliaria moderna y confiable
+- Sensacion de marca establecida
+- Estetica de empresa premium actual
+- Profesional sin ser fria
+
+RESTRICCIONES:
+- No mas de 1 elemento decorativo
+- No efectos complejos
+- No tipografia extrema
+
+OBJETIVO: Look de inmobiliaria premium contemporanea`
+        },
+      ],
+    };
+
+    const tamanoDescriptions = {
+      story: 'formato vertical Story/Reel de 1080x1920px (relacion 9:16)',
+      cuadrado: 'formato cuadrado de 1080x1080px (relacion 1:1) para feed',
+      semi_vertical: 'formato semi-vertical de 1080x1350px (relacion 4:5) para feed',
+      horizontal: 'formato horizontal de 1080x566px (relacion 1.91:1) para carrusel o anuncio',
+      reel: 'formato vertical Reel de 1080x1920px (relacion 9:16)',
+      portada: 'formato cuadrado de 1080x1080px (relacion 1:1) para portada de perfil',
+    };
+
+    function generatePrompts(data) {
+      const { precio, direccion, tipoPropiedad, descripcion, colorPrincipal, colorSecundario1, colorSecundario2, estilo, tamano } = data;
+      const variants = styleVariants[estilo];
+      const tamanoDesc = tamanoDescriptions[tamano] || tamanoDescriptions['story'];
+
+      return variants.map(function(variant) {
+        return 'Diseña un flyer inmobiliario profesional de alta calidad para publicar en redes sociales.\n\nESTILO VISUAL: ' + variant.name + '\nReglas de diseno:\n' + variant.rules + '\n\nPALETA DE COLORES (usar exclusivamente):\n- Color principal: ' + colorPrincipal + '\n- Color secundario 1: ' + colorSecundario1 + '\n- Color secundario 2: ' + colorSecundario2 + '\n\nINFORMACION DE LA PROPIEDAD:\n- Tipo: ' + tipoPropiedad + '\n- Precio: ' + precio + '\n- Ubicacion: ' + direccion + '\n- Detalles: ' + descripcion + '\n\nARCHIVOS ADJUNTOS:\n- El usuario adjuntara una imagen de la propiedad: usarla como foto principal del flyer.\n- El usuario adjuntara el logo de la inmobiliaria/agente: integrarlo de forma visible pero no invasiva, respetando el estilo visual. Ubicarlo preferentemente en una esquina o en el area de contacto.\n\nINSTRUCCIONES ADICIONALES:\n- El flyer debe verse como una pieza publicitaria profesional lista para publicar.\n- Mantener coherencia visual completa con el estilo ' + variant.name + '.\n- Formato: ' + tamanoDesc + '.\n- Texto legible, jerarquia visual clara, sin saturar de informacion.';
+      });
+    }
+
+    // ========================
+    // PROGRESS BAR
+    // ========================
+    const steps = [
+      { num: 1, label: 'Textos' },
+      { num: 2, label: 'Diseño' },
+      { num: 3, label: 'Resultado' },
+    ];
+
+    function ProgressBar({ currentStep }) {
+      return (
+        <div className="bg-white border-b border-slate-200 px-6 py-4">
+          <div className="max-w-3xl mx-auto flex items-center gap-2">
+            {steps.map((s, i) => (
+              <div key={s.num} className="flex items-center flex-1">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className={'w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 transition-colors ' + (currentStep >= s.num ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500')}>
+                    {currentStep > s.num ? '✓' : s.num}
+                  </div>
+                  <span className={'text-sm font-medium hidden sm:block ' + (currentStep >= s.num ? 'text-indigo-600' : 'text-slate-400')}>
+                    {s.label}
+                  </span>
+                </div>
+                {i < steps.length - 1 && (
+                  <div className={'h-0.5 flex-1 mx-3 transition-colors ' + (currentStep > s.num ? 'bg-indigo-600' : 'bg-slate-200')} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ========================
+    // SIDEBAR
+    // ========================
+    function Sidebar({ history, onLoadEntry, onNewProject }) {
+      const [collapsed, setCollapsed] = useState(true);
+      return (
+        <>
+          <button onClick={function() { setCollapsed(!collapsed); }} className="md:hidden fixed top-3 left-3 z-50 bg-indigo-600 text-white p-2 rounded-lg shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <aside className={(collapsed ? '-translate-x-full' : 'translate-x-0') + ' md:translate-x-0 fixed md:relative z-40 w-72 h-screen bg-slate-900 text-white flex flex-col transition-transform'}>
+            <div className="p-5 border-b border-slate-700">
+              <h1 className="text-lg font-bold tracking-tight">🏠 Flyer Prompts</h1>
+              <p className="text-xs text-slate-400 mt-1">Generador de prompts inmobiliarios</p>
+            </div>
+            <div className="p-4">
+              <button onClick={function() { onNewProject(); setCollapsed(true); }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors">+ Nuevo Proyecto</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Historial</h2>
+              {history.length === 0 ? (
+                <p className="text-xs text-slate-500 italic">Sin historial aun</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {history.map(function(entry, i) { return (
+                    <li key={entry.id || i}>
+                      <button onClick={function() { onLoadEntry(entry); setCollapsed(true); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors group">
+                        <p className="text-sm font-medium text-slate-200 truncate group-hover:text-white">{entry.form.tipoPropiedad} — {entry.form.precio}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">{entry.form.direccion}</p>
+                        <p className="text-xs text-slate-600 mt-1">{new Date(entry.date).toLocaleDateString('es-AR')}</p>
+                      </button>
+                    </li>
+                  ); })}
+                </ul>
+              )}
+            </div>
+            <div className="p-4 border-t border-slate-700"><p className="text-xs text-slate-500 text-center">v1.0 — Prompt Generator</p></div>
+          </aside>
+          {!collapsed && (<div onClick={function() { setCollapsed(true); }} className="md:hidden fixed inset-0 bg-black/50 z-30" />)}
+        </>
+      );
+    }
+
+    // ========================
+    // STEP 1
+    // ========================
+    const tiposPropiedad = ['Casa', 'Departamento', 'PH', 'Terreno', 'Local comercial', 'Oficina', 'Quinta', 'Duplex', 'Loft'];
+
+    function Step1Textos({ form, updateField, onNext }) {
+      const [errors, setErrors] = useState({});
+      function validate() {
+        var ne = {};
+        if (!form.precio.trim()) ne.precio = 'El precio es obligatorio';
+        if (!form.direccion.trim()) ne.direccion = 'La direccion es obligatoria';
+        if (!form.tipoPropiedad.trim()) ne.tipoPropiedad = 'Selecciona un tipo de propiedad';
+        if (!form.descripcion.trim()) ne.descripcion = 'La descripcion es obligatoria';
+        setErrors(ne);
+        return Object.keys(ne).length === 0;
+      }
+      function handleNext() { if (validate()) onNext(); }
+      function inp(field, label, placeholder, isTextarea) {
+        var cls = 'w-full px-4 py-2.5 rounded-lg border ' + (errors[field] ? 'border-red-400 bg-red-50' : 'border-slate-300') + ' focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition';
+        return (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+            {isTextarea ? (
+              <textarea value={form[field]} onChange={function(e) { updateField(field, e.target.value); }} rows={4} placeholder={placeholder} className={cls + ' resize-none'} />
+            ) : (
+              <input type="text" value={form[field]} onChange={function(e) { updateField(field, e.target.value); }} placeholder={placeholder} className={cls} />
+            )}
+            {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>}
+          </div>
+        );
+      }
+      return (
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-1">Informacion de la propiedad</h2>
+          <p className="text-slate-500 mb-8">Ingresa los datos principales para tus flyers.</p>
+          <div className="space-y-5">
+            {inp('precio', 'Precio de la propiedad', 'Ej: USD 185.000')}
+            {inp('direccion', 'Direccion', 'Ej: Av. Libertador 1234, Buenos Aires')}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de propiedad</label>
+              <select value={form.tipoPropiedad} onChange={function(e) { updateField('tipoPropiedad', e.target.value); }} className={'w-full px-4 py-2.5 rounded-lg border ' + (errors.tipoPropiedad ? 'border-red-400 bg-red-50' : 'border-slate-300') + ' focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white'}>
+                <option value="">Seleccionar...</option>
+                {tiposPropiedad.map(function(t) { return <option key={t} value={t}>{t}</option>; })}
+              </select>
+              {errors.tipoPropiedad && <p className="text-red-500 text-xs mt-1">{errors.tipoPropiedad}</p>}
+            </div>
+            {inp('descripcion', 'Descripcion / Detalles', 'Ej: 3 ambientes, 2 banos, cochera, balcon...', true)}
+          </div>
+          <div className="flex justify-end mt-10">
+            <button onClick={handleNext} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-sm">Siguiente →</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ========================
+    // STEP 2
+    // ========================
+    const tamanos = [
+      { value: 'story', label: 'Historia / Story', desc: '1080 x 1920 px (9:16)' },
+      { value: 'cuadrado', label: 'Cuadrado', desc: '1080 x 1080 px (1:1)' },
+      { value: 'semi_vertical', label: 'Semi vertical', desc: '1080 x 1350 px (4:5)' },
+      { value: 'horizontal', label: 'Horizontal', desc: '1080 x 566 px (1.91:1)' },
+      { value: 'reel', label: 'Reel / Video', desc: '1080 x 1920 px (9:16)' },
+      { value: 'portada', label: 'Portada de perfil', desc: '1080 x 1080 px (1:1)' },
+    ];
+    const estilos = [
+      { value: 'minimalista', label: 'Minimalista', desc: 'Limpio, espacioso, sin ruido visual' },
+      { value: 'moderno', label: 'Moderno', desc: 'Geometrico, bold, tech-forward' },
+      { value: 'lujo', label: 'Lujo', desc: 'Dorado, exclusivo, premium' },
+      { value: 'rustico', label: 'Rustico', desc: 'Calido, natural, texturas organicas' },
+      { value: 'elegante', label: 'Elegante', desc: 'Sofisticado, clasico, refinado' },
+    ];
+
+    function ColorInput({ label, value, onChange }) {
+      return (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+          <div className="flex items-center gap-3">
+            <input type="color" value={value} onChange={function(e) { onChange(e.target.value); }} className="w-12 h-10 rounded-lg border border-slate-300 cursor-pointer p-0.5" />
+            <input type="text" value={value} onChange={function(e) { onChange(e.target.value); }} maxLength={7} className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition font-mono text-sm" />
+            <div className="w-10 h-10 rounded-lg border border-slate-200 shadow-inner" style={{ backgroundColor: value }} />
+          </div>
+        </div>
+      );
+    }
+
+    function Step2Diseno({ form, updateField, onNext, onBack }) {
+      return (
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-1">Diseño visual</h2>
+          <p className="text-slate-500 mb-8">Defini la paleta de colores y el estilo de tus flyers.</p>
+          <div className="space-y-5 mb-10">
+            <ColorInput label="Color principal" value={form.colorPrincipal} onChange={function(v) { updateField('colorPrincipal', v); }} />
+            <ColorInput label="Color secundario 1" value={form.colorSecundario1} onChange={function(v) { updateField('colorSecundario1', v); }} />
+            <ColorInput label="Color secundario 2" value={form.colorSecundario2} onChange={function(v) { updateField('colorSecundario2', v); }} />
+          </div>
+          <div className="mb-10">
+            <label className="block text-sm font-medium text-slate-700 mb-2">Preview de paleta</label>
+            <div className="flex rounded-xl overflow-hidden h-14 shadow-sm border border-slate-200">
+              <div className="flex-1" style={{ backgroundColor: form.colorPrincipal }} />
+              <div className="flex-1" style={{ backgroundColor: form.colorSecundario1 }} />
+              <div className="flex-1" style={{ backgroundColor: form.colorSecundario2 }} />
+            </div>
+          </div>
+          <div className="mb-10">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Tamano / Formato</label>
+            <select value={form.tamano} onChange={function(e) { updateField('tamano', e.target.value); }} className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white">
+              {tamanos.map(function(t) { return <option key={t.value} value={t.value}>{t.label} — {t.desc}</option>; })}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-3">Estilo de diseño</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {estilos.map(function(s) { return (
+                <button key={s.value} onClick={function() { updateField('estilo', s.value); }} className={'text-left px-4 py-3.5 rounded-xl border-2 transition-all ' + (form.estilo === s.value ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300 bg-white')}>
+                  <p className={'font-semibold text-sm ' + (form.estilo === s.value ? 'text-indigo-700' : 'text-slate-700')}>{s.label}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{s.desc}</p>
+                </button>
+              ); })}
+            </div>
+          </div>
+          <div className="flex justify-between mt-10">
+            <button onClick={onBack} className="text-slate-600 hover:text-slate-800 font-medium py-2.5 px-6 rounded-lg transition-colors">← Anterior</button>
+            <button onClick={onNext} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-sm">Siguiente →</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ========================
+    // STEP 3
+    // ========================
+    const estiloLabels = { minimalista: 'Minimalista', moderno: 'Moderno', lujo: 'Lujo', rustico: 'Rustico', elegante: 'Elegante' };
+
+    function Step3Resumen({ form, generatedPrompts, setGeneratedPrompts, addToHistory, onBack, onReset }) {
+      const [copied, setCopied] = useState(null);
+      const [allCopied, setAllCopied] = useState(false);
+      function handleGenerate() {
+        var prompts = generatePrompts(form);
+        setGeneratedPrompts(prompts);
+        addToHistory({ id: Date.now(), date: new Date().toISOString(), form: Object.assign({}, form), prompts: prompts });
+      }
+      function copyOne(text, index) { navigator.clipboard.writeText(text); setCopied(index); setTimeout(function() { setCopied(null); }, 1500); }
+      function copyAll() {
+        var allText = generatedPrompts.map(function(p, i) { return '=== PROMPT ' + (i + 1) + ' ===\n\n' + p; }).join('\n\n\n');
+        navigator.clipboard.writeText(allText); setAllCopied(true); setTimeout(function() { setAllCopied(false); }, 2000);
+      }
+      return (
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-1">Resumen y prompts</h2>
+          <p className="text-slate-500 mb-8">Revisa la info y genera tus prompts.</p>
+          <div className="bg-white rounded-xl border border-slate-200 p-6 mb-8 shadow-sm">
+            <h3 className="font-semibold text-slate-700 mb-4 text-sm uppercase tracking-wider">Resumen</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div><span className="text-slate-500">Tipo:</span><span className="ml-2 font-medium text-slate-800">{form.tipoPropiedad}</span></div>
+              <div><span className="text-slate-500">Precio:</span><span className="ml-2 font-medium text-slate-800">{form.precio}</span></div>
+              <div className="sm:col-span-2"><span className="text-slate-500">Direccion:</span><span className="ml-2 font-medium text-slate-800">{form.direccion}</span></div>
+              <div className="sm:col-span-2"><span className="text-slate-500">Descripcion:</span><span className="ml-2 text-slate-700">{form.descripcion}</span></div>
+            </div>
+            <div className="mt-5 pt-5 border-t border-slate-100">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="text-sm text-slate-500">Paleta:</span>
+                {[form.colorPrincipal, form.colorSecundario1, form.colorSecundario2].map(function(c, i) { return (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <div className="w-6 h-6 rounded-md border border-slate-200" style={{ backgroundColor: c }} />
+                    <span className="text-xs font-mono text-slate-600">{c}</span>
+                  </div>
+                ); })}
+                <span className="text-sm text-slate-500 ml-2">Estilo:</span>
+                <span className="text-sm font-medium text-indigo-600">{estiloLabels[form.estilo]}</span>
+                <span className="text-sm text-slate-500 ml-2">Tamano:</span>
+                <span className="text-sm font-medium text-indigo-600">{(tamanos.find(function(t) { return t.value === form.tamano; }) || {}).label || form.tamano}</span>
+              </div>
+            </div>
+          </div>
+          {!generatedPrompts && (
+            <div className="text-center mb-8">
+              <button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-10 rounded-xl transition-colors shadow-md text-lg">Generar 10 Prompts</button>
+            </div>
+          )}
+          {generatedPrompts && (
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-semibold text-slate-700">Prompts generados ({generatedPrompts.length})</h3>
+                <button onClick={copyAll} className={'text-sm font-medium py-2 px-5 rounded-lg transition-colors ' + (allCopied ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200')}>
+                  {allCopied ? '✓ Copiados todos' : 'Copiar todos los prompts'}
+                </button>
+              </div>
+              <div className="space-y-4">
+                {generatedPrompts.map(function(prompt, i) { return (
+                  <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
+                      <span className="text-sm font-semibold text-slate-600">
+                        Prompt {i + 1} — <span className="text-indigo-600">{(styleVariants[form.estilo] && styleVariants[form.estilo][i]) ? styleVariants[form.estilo][i].name : ''}</span>
+                      </span>
+                      <button onClick={function() { copyOne(prompt, i); }} className={'text-xs font-medium py-1.5 px-4 rounded-md transition-colors ' + (copied === i ? 'bg-green-100 text-green-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100')}>
+                        {copied === i ? '✓ Copiado' : 'Copiar'}
+                      </button>
+                    </div>
+                    <pre className="p-5 text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">{prompt}</pre>
+                  </div>
+                ); })}
+              </div>
+            </div>
+          )}
+          <div className="flex justify-between mt-10">
+            <button onClick={onBack} className="text-slate-600 hover:text-slate-800 font-medium py-2.5 px-6 rounded-lg transition-colors">← Anterior</button>
+            {generatedPrompts && (
+              <button onClick={onReset} className="bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-sm">Nuevo proyecto</button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ========================
+    // APP
+    // ========================
+    const INITIAL_FORM = { precio: '', direccion: '', tipoPropiedad: '', descripcion: '', colorPrincipal: '#1a1a2e', colorSecundario1: '#16213e', colorSecundario2: '#e94560', estilo: 'moderno', tamano: 'story' };
+
+    function loadHistory() { try { return JSON.parse(localStorage.getItem('promptHistory') || '[]'); } catch (e) { return []; } }
+
+    function App() {
+      const [step, setStep] = useState(1);
+      const [form, setForm] = useState(INITIAL_FORM);
+      const [history, setHistory] = useState(loadHistory);
+      const [generatedPrompts, setGeneratedPrompts] = useState(null);
+      useEffect(function() { localStorage.setItem('promptHistory', JSON.stringify(history)); }, [history]);
+      function updateField(field, value) { setForm(function(prev) { var n = Object.assign({}, prev); n[field] = value; return n; }); }
+      function addToHistory(entry) { setHistory(function(prev) { return [entry].concat(prev).slice(0, 20); }); }
+      function loadFromHistory(entry) { setForm(entry.form); setGeneratedPrompts(entry.prompts); setStep(3); }
+      function resetForm() { setForm(INITIAL_FORM); setGeneratedPrompts(null); setStep(1); }
+      return (
+        <div className="flex h-screen bg-slate-50">
+          <Sidebar history={history} onLoadEntry={loadFromHistory} onNewProject={resetForm} />
+          <div className="flex-1 flex flex-col min-w-0">
+            <ProgressBar currentStep={step} />
+            <main className="flex-1 overflow-y-auto p-6 md:p-10">
+              <div className="max-w-3xl mx-auto">
+                {step === 1 && <Step1Textos form={form} updateField={updateField} onNext={function() { setStep(2); }} />}
+                {step === 2 && <Step2Diseno form={form} updateField={updateField} onNext={function() { setStep(3); }} onBack={function() { setStep(1); }} />}
+                {step === 3 && <Step3Resumen form={form} generatedPrompts={generatedPrompts} setGeneratedPrompts={setGeneratedPrompts} addToHistory={addToHistory} onBack={function() { setStep(2); }} onReset={resetForm} />}
+              </div>
+            </main>
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
