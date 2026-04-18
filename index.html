@@ -151,6 +151,77 @@ RESTRICCIONES:
 
 OBJETIVO: Look clasico de lujo con acentos dorados`
         },
+        {
+          name: 'Lujo editorial nocturno',
+          rules: `ESTILO VISUAL:
+- Real estate premium de lujo con estetica editorial
+- Render arquitectonico hiperrealista + iluminacion cinematografica
+- Look corporativo elegante (desarrolladora internacional)
+
+REGLAS DE DISENO:
+- Composicion vertical con foco en arquitectura
+- Alto contraste: fondo frio vs luces calidas
+- Uso de bloques oscuros para destacar datos
+- Amplio espacio negativo en lado izquierdo
+- Estetica limpia, sin saturacion
+
+COMPOSICION:
+- Edificio en perspectiva 3/4 ocupando lado derecho
+- Fondo con cielo degradado oscuro
+- Texto principal en esquina superior izquierda
+- Datos en bloques alineados debajo
+- Base con fade blanco para integracion
+
+JERARQUIA:
+1. Titulo principal (nombre del proyecto)
+2. Subtitulo/script
+3. Imagen del edificio
+4. Datos clave (stories / sqft)
+5. Ubicacion
+6. Marca
+
+TIPOGRAFIA:
+- Serif elegante (alto contraste) para titulo
+- Script fina para subtitulo
+- Sans serif para datos
+- Mayusculas en titulos
+- Colores dorado/beige y blanco
+
+DEGRADADOS:
+- Fondo: azul profundo a verde azulado
+- Transiciones suaves
+- Fade blanco inferior para base
+- Sin degradados agresivos
+
+GLASS (OBLIGATORIO):
+- Reemplazar bloques negros por glass blur sutil 15-25%
+
+GLOW:
+- Glow calido en ventanas del edificio
+- Iluminacion interna protagonista
+- Sin glow en textos
+
+ATMOSFERA:
+- Sofisticada, nocturna, aspiracional
+- Lujo moderno y exclusividad
+- Sensacion de alto valor
+
+RESTRICCIONES:
+- No colores saturados
+- No exceso de elementos
+- No tipografias modernas/tech
+- No multiples focos visuales
+- No CTA invasivo
+
+INSTRUCCIONES ADICIONALES:
+- Priorizar iluminacion calida interior
+- Mantener aire visual en lado izquierdo
+- Enfatizar perspectiva arquitectonica
+- Estetica editorial, no agresiva
+- Balance entre imagen y tipografia
+
+OBJETIVO: Branding y posicionamiento premium, transmitir lujo, escala y categoria`
+        },
       ],
       rustico: [
         {
@@ -242,8 +313,35 @@ OBJETIVO: Look clasico simetrico y profesional`
       const variants = styleVariants[estilo];
       const tamanoDesc = tamanoDescriptions[tamano] || tamanoDescriptions['story'];
 
-      var variant = variants[0];
-      return 'Diseña un flyer inmobiliario profesional de alta calidad para publicar en redes sociales.\n\nESTILO VISUAL: ' + variant.name + '\nReglas de diseno:\n' + variant.rules + '\n\nPALETA DE COLORES (usar exclusivamente):\n- Color principal: ' + colorPrincipal + '\n- Color secundario 1: ' + colorSecundario1 + '\n- Color secundario 2: ' + colorSecundario2 + '\n\nINFORMACION DE LA PROPIEDAD:\n- Tipo: ' + tipoPropiedad + '\n- Precio: ' + precio + '\n- Ubicacion: ' + direccion + '\n- Detalles: ' + descripcion + '\n\nARCHIVOS ADJUNTOS:\n- El usuario adjuntara una imagen de la propiedad: usarla como foto principal del flyer.\n- El usuario adjuntara el logo de la inmobiliaria/agente: integrarlo de forma visible pero no invasiva, respetando el estilo visual. Ubicarlo preferentemente en una esquina o en el area de contacto.\n\nINSTRUCCIONES ADICIONALES:\n- El flyer debe verse como una pieza publicitaria profesional lista para publicar.\n- Mantener coherencia visual completa con el estilo ' + variant.name + '.\n- Formato: ' + tamanoDesc + '.\n- Texto legible, jerarquia visual clara, sin saturar de informacion.';
+      var variant = variants[data.variantIndex || 0] || variants[0];
+      var photoSection = data.photoBase64
+        ? 'IMAGEN DE LA PROPIEDAD:\n- Se adjunta la foto real de la propiedad. DEBES usarla como imagen principal del flyer, integrandola en la composicion segun el estilo indicado. No ignores esta imagen.'
+        : 'IMAGEN DE LA PROPIEDAD:\n- No se proporciono foto. Genera una imagen de fondo apropiada para el tipo de propiedad indicada.';
+      return 'Diseña un flyer inmobiliario profesional de alta calidad para publicar en redes sociales.\n\nESTILO VISUAL: ' + variant.name + '\nReglas de diseno:\n' + variant.rules + '\n\nPALETA DE COLORES (usar exclusivamente):\n- Color principal: ' + colorPrincipal + '\n- Color secundario 1: ' + colorSecundario1 + '\n- Color secundario 2: ' + colorSecundario2 + '\n\nINFORMACION DE LA PROPIEDAD:\n- Tipo: ' + tipoPropiedad + '\n- Precio: ' + precio + '\n- Ubicacion: ' + direccion + '\n- Detalles: ' + descripcion + '\n\n' + photoSection + '\n\nINSTRUCCIONES ADICIONALES:\n- El flyer debe verse como una pieza publicitaria profesional lista para publicar.\n- Mantener coherencia visual completa con el estilo ' + variant.name + '.\n- Formato: ' + tamanoDesc + '.\n- Texto legible, jerarquia visual clara, sin saturar de informacion.';
+    }
+
+    // ========================
+    // INDEXEDDB - imagen completa persistente
+    // ========================
+    function openDB() {
+      return new Promise(function(resolve, reject) {
+        var req = indexedDB.open('FlyerDesigns', 1);
+        req.onupgradeneeded = function(e) { e.target.result.createObjectStore('images', { keyPath: 'id' }); };
+        req.onsuccess = function(e) { resolve(e.target.result); };
+        req.onerror = function(e) { reject(e.target.error); };
+      });
+    }
+    async function dbSaveImage(id, imageUrl) {
+      try { var db = await openDB(); await new Promise(function(res, rej) { var tx = db.transaction('images', 'readwrite'); tx.objectStore('images').put({ id: id, imageUrl: imageUrl }); tx.oncomplete = res; tx.onerror = rej; }); } catch(e) {}
+    }
+    async function dbGetImage(id) {
+      try { var db = await openDB(); return await new Promise(function(res) { var tx = db.transaction('images', 'readonly'); var req = tx.objectStore('images').get(id); req.onsuccess = function(e) { res(e.target.result ? e.target.result.imageUrl : null); }; req.onerror = function() { res(null); }; }); } catch(e) { return null; }
+    }
+    async function dbDeleteImage(id) {
+      try { var db = await openDB(); await new Promise(function(res) { var tx = db.transaction('images', 'readwrite'); tx.objectStore('images').delete(id); tx.oncomplete = res; tx.onerror = res; }); } catch(e) {}
+    }
+    async function dbDeleteAll() {
+      try { var db = await openDB(); await new Promise(function(res) { var tx = db.transaction('images', 'readwrite'); tx.objectStore('images').clear(); tx.oncomplete = res; tx.onerror = res; }); } catch(e) {}
     }
 
     // ========================
@@ -282,50 +380,202 @@ OBJETIVO: Look clasico simetrico y profesional`
     // ========================
     // SIDEBAR
     // ========================
-    function Sidebar({ history, onLoadEntry, onNewProject, onClearHistory }) {
+    function createThumbnail(dataUrl) {
+      return new Promise(function(resolve) {
+        var img = new Image();
+        img.onload = function() {
+          var maxW = 240;
+          var ratio = Math.min(maxW / img.width, 1);
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.65));
+        };
+        img.onerror = function() { resolve(null); };
+        img.src = dataUrl;
+      });
+    }
+
+    function Sidebar({ history, onLoadEntry, onNewProject, onClearHistory, apiKey, onApiKeyChange, savedDesigns, onDeleteDesign }) {
       const [collapsed, setCollapsed] = useState(true);
+      const [activeTab, setActiveTab] = useState('api');
+      const [showKey, setShowKey] = useState(false);
+      const [keyInput, setKeyInput] = useState(apiKey || '');
+      const [apiSaved, setApiSaved] = useState(false);
+
+      function saveKey() {
+        onApiKeyChange(keyInput.trim());
+        setApiSaved(true);
+        setTimeout(function() { setApiSaved(false); }, 1500);
+      }
+
+      var tabs = [
+        { id: 'api', label: 'API' },
+        { id: 'historial', label: 'Historial' },
+        { id: 'disenos', label: 'Mis diseños' },
+      ];
+
       return (
         <>
           <button onClick={function() { setCollapsed(!collapsed); }} className="md:hidden fixed top-3 left-3 z-50 bg-indigo-600 text-white p-2 rounded-lg shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
           <aside className={(collapsed ? '-translate-x-full' : 'translate-x-0') + ' md:translate-x-0 fixed md:relative z-40 w-72 h-screen bg-slate-900 text-white flex flex-col transition-transform'}>
-            <div className="p-5 border-b border-slate-700">
+
+            {/* Header */}
+            <div className="p-5 border-b border-slate-700 shrink-0">
               <h1 className="text-lg font-bold tracking-tight">🏠 Flyer Prompts</h1>
               <p className="text-xs text-slate-400 mt-1">Generador de prompts inmobiliarios</p>
             </div>
-            <div className="p-4">
+
+            {/* Nuevo proyecto */}
+            <div className="px-4 pt-4 pb-3 shrink-0">
               <button onClick={function() { onNewProject(); setCollapsed(true); }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors">+ Nuevo Proyecto</button>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Historial</h2>
+
+            {/* Tabs nav */}
+            <div className="flex px-4 gap-1 shrink-0 mb-3">
+              {tabs.map(function(tab) { return (
                 <button
-                  onClick={function() { if (confirm('¿Eliminar todo el historial?')) onClearHistory(); }}
-                  className={'transition-colors ' + (history.length > 0 ? 'text-slate-500 hover:text-red-400' : 'text-slate-700 cursor-not-allowed')}
-                  title="Eliminar historial"
-                  disabled={history.length === 0}
+                  key={tab.id}
+                  onClick={function() { setActiveTab(tab.id); }}
+                  className={'flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ' + (activeTab === tab.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800')}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  {tab.label}
+                  {tab.id === 'disenos' && savedDesigns.length > 0 && (
+                    <span className="ml-1 bg-indigo-600 text-white text-xs rounded-full px-1.5 py-0.5">{savedDesigns.length}</span>
+                  )}
                 </button>
-              </div>
-              {history.length === 0 ? (
-                <p className="text-xs text-slate-500 italic">Sin historial aun</p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {history.map(function(entry, i) { return (
-                    <li key={entry.id || i}>
-                      <button onClick={function() { onLoadEntry(entry); setCollapsed(true); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors group">
-                        <p className="text-sm font-medium text-slate-200 truncate group-hover:text-white">{entry.form.tipoPropiedad} — {entry.form.precio}</p>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">{entry.form.direccion}</p>
-                        <p className="text-xs text-slate-600 mt-1">{new Date(entry.date).toLocaleDateString('es-AR')}</p>
+              ); })}
+            </div>
+
+            {/* Tab content */}
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
+
+              {/* API tab */}
+              {activeTab === 'api' && (
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">API de Imagen</span>
+                    {apiKey && <span className="ml-auto text-green-400 text-xs">● Activa</span>}
+                  </div>
+                  <div className="relative mb-2">
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      value={keyInput}
+                      onChange={function(e) { setKeyInput(e.target.value); }}
+                      onKeyDown={function(e) { if (e.key === 'Enter') saveKey(); }}
+                      placeholder="Pegá tu API key aquí"
+                      className="w-full bg-slate-900 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 pr-8 font-mono"
+                    />
+                    <button onClick={function() { setShowKey(!showKey); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                      {showKey
+                        ? <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 4.411m0 0L21 21" /></svg>
+                        : <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      }
+                    </button>
+                  </div>
+                  <button onClick={saveKey} className={'w-full text-xs font-medium py-1.5 rounded-lg transition-colors ' + (apiSaved ? 'bg-green-600 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white')}>
+                    {apiSaved ? '✓ Guardada' : 'Guardar key'}
+                  </button>
+                  {apiKey && (
+                    <button onClick={function() { setKeyInput(''); onApiKeyChange(''); }} className="w-full text-xs text-slate-500 hover:text-red-400 mt-1.5 transition-colors">
+                      Borrar key
+                    </button>
+                  )}
+                  <p className="text-xs text-slate-600 mt-3">Modelo se selecciona automáticamente (Google AI Studio).</p>
+                </div>
+              )}
+
+              {/* Historial tab */}
+              {activeTab === 'historial' && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Historial</span>
+                    <button
+                      onClick={function() { if (confirm('¿Eliminar todo el historial?')) onClearHistory(); }}
+                      disabled={history.length === 0}
+                      className={'transition-colors ' + (history.length > 0 ? 'text-slate-500 hover:text-red-400' : 'text-slate-700 cursor-not-allowed')}
+                      title="Eliminar historial"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                  {history.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">Sin historial aún</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {history.map(function(entry, i) { return (
+                        <li key={entry.id || i}>
+                          <button onClick={function() { onLoadEntry(entry); setCollapsed(true); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors group">
+                            <p className="text-sm font-medium text-slate-200 truncate group-hover:text-white">{entry.form.tipoPropiedad} — {entry.form.precio}</p>
+                            <p className="text-xs text-slate-500 truncate mt-0.5">{entry.form.direccion}</p>
+                            <p className="text-xs text-slate-600 mt-1">{new Date(entry.date).toLocaleDateString('es-AR')}</p>
+                          </button>
+                        </li>
+                      ); })}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {/* Mis diseños tab */}
+              {activeTab === 'disenos' && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mis diseños</span>
+                    {savedDesigns.length > 0 && (
+                      <button
+                        onClick={function() { if (confirm('¿Eliminar todos los diseños?')) onDeleteDesign('all'); }}
+                        className="text-slate-500 hover:text-red-400 transition-colors"
+                        title="Eliminar todos"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
-                    </li>
-                  ); })}
-                </ul>
+                    )}
+                  </div>
+                  {savedDesigns.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">Las imágenes generadas aparecerán acá.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {savedDesigns.map(function(d) { return (
+                        <div key={d.id} className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
+                          {d.thumbnail && <img src={d.thumbnail} alt="Diseño" className="w-full object-cover max-h-36" />}
+                          <div className="p-2.5">
+                            <p className="text-xs font-medium text-slate-200 truncate">{d.label}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{new Date(d.date).toLocaleDateString('es-AR')}</p>
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={async function() {
+                                  var url = d.imageUrl || await dbGetImage(d.id);
+                                  if (!url) return alert('Imagen no disponible.');
+                                  var a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = 'flyer-' + d.id + '.png';
+                                  a.click();
+                                }}
+                                className="flex-1 text-center text-xs bg-indigo-600 hover:bg-indigo-500 text-white py-1 rounded-md transition-colors"
+                              >
+                                Descargar
+                              </button>
+                              <button onClick={function() { onDeleteDesign(d.id); }} className="text-xs text-slate-500 hover:text-red-400 px-2 py-1 transition-colors">
+                                Borrar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ); })}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-            <div className="p-4 border-t border-slate-700"><p className="text-xs text-slate-500 text-center">v1.0 — Prompt Generator</p></div>
+
+            <div className="p-4 border-t border-slate-700 shrink-0">
+              <p className="text-xs text-slate-500 text-center">v2.0 — Flyer Generator</p>
+            </div>
           </aside>
           {!collapsed && (<div onClick={function() { setCollapsed(true); }} className="md:hidden fixed inset-0 bg-black/50 z-30" />)}
         </>
@@ -339,6 +589,8 @@ OBJETIVO: Look clasico simetrico y profesional`
 
     function Step1Textos({ form, updateField, onNext }) {
       const [errors, setErrors] = useState({});
+      const fileInputRef = React.useRef(null);
+
       function validate() {
         var ne = {};
         if (!form.precio.trim()) ne.precio = 'El precio es obligatorio';
@@ -349,6 +601,28 @@ OBJETIVO: Look clasico simetrico y profesional`
         return Object.keys(ne).length === 0;
       }
       function handleNext() { if (validate()) onNext(); }
+
+      function handlePhoto(e) {
+        var file = e.target.files && e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          var dataUrl = ev.target.result;
+          var base64 = dataUrl.split(',')[1];
+          updateField('photoBase64', base64);
+          updateField('photoMime', file.type);
+          updateField('photoPreview', dataUrl);
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function removePhoto() {
+        updateField('photoBase64', null);
+        updateField('photoMime', null);
+        updateField('photoPreview', null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+
       function inp(field, label, placeholder, isTextarea) {
         var cls = 'w-full px-4 py-2.5 rounded-lg border ' + (errors[field] ? 'border-red-400 bg-red-50' : 'border-slate-300') + ' focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition';
         return (
@@ -363,6 +637,7 @@ OBJETIVO: Look clasico simetrico y profesional`
           </div>
         );
       }
+
       return (
         <div>
           <h2 className="text-2xl font-bold text-slate-800 mb-1">Informacion de la propiedad</h2>
@@ -379,6 +654,32 @@ OBJETIVO: Look clasico simetrico y profesional`
               {errors.tipoPropiedad && <p className="text-red-500 text-xs mt-1">{errors.tipoPropiedad}</p>}
             </div>
             {inp('descripcion', 'Descripcion / Detalles', 'Ej: 3 ambientes, 2 banos, cochera, balcon...', true)}
+
+            {/* FOTO DE LA PROPIEDAD */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Foto de la propiedad <span className="text-slate-400 font-normal">(opcional)</span>
+              </label>
+              {!form.photoPreview ? (
+                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors group">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-400 group-hover:text-indigo-400 mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  <span className="text-sm text-slate-500 group-hover:text-indigo-500 transition-colors">Hacé click para subir una foto</span>
+                  <span className="text-xs text-slate-400 mt-1">JPG, PNG, WEBP</span>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhoto} />
+                </label>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                  <img src={form.photoPreview} alt="Foto de la propiedad" className="w-full max-h-56 object-cover" />
+                  <button
+                    onClick={removePhoto}
+                    className="absolute top-2 right-2 bg-white/90 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-full p-1.5 shadow transition-colors"
+                    title="Quitar foto"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex justify-end mt-10">
             <button onClick={handleNext} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-sm">Siguiente →</button>
@@ -447,12 +748,24 @@ OBJETIVO: Look clasico simetrico y profesional`
             <label className="block text-sm font-medium text-slate-700 mb-3">Estilo de diseño</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {estilos.map(function(s) { return (
-                <button key={s.value} onClick={function() { updateField('estilo', s.value); }} className={'text-left px-4 py-3.5 rounded-xl border-2 transition-all ' + (form.estilo === s.value ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300 bg-white')}>
+                <button key={s.value} onClick={function() { updateField('estilo', s.value); updateField('variantIndex', 0); }} className={'text-left px-4 py-3.5 rounded-xl border-2 transition-all ' + (form.estilo === s.value ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300 bg-white')}>
                   <p className={'font-semibold text-sm ' + (form.estilo === s.value ? 'text-indigo-700' : 'text-slate-700')}>{s.label}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{s.desc}</p>
                 </button>
               ); })}
             </div>
+            {styleVariants[form.estilo] && styleVariants[form.estilo].length > 1 && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Variante de estilo</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {styleVariants[form.estilo].map(function(v, i) { return (
+                    <button key={i} onClick={function() { updateField('variantIndex', i); }} className={'text-left px-4 py-3 rounded-lg border-2 transition-all ' + (form.variantIndex === i ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300 bg-white')}>
+                      <p className={'font-semibold text-sm ' + (form.variantIndex === i ? 'text-indigo-700' : 'text-slate-700')}>{v.name}</p>
+                    </button>
+                  ); })}
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex justify-between mt-10">
             <button onClick={onBack} className="text-slate-600 hover:text-slate-800 font-medium py-2.5 px-6 rounded-lg transition-colors">← Anterior</button>
@@ -467,18 +780,112 @@ OBJETIVO: Look clasico simetrico y profesional`
     // ========================
     const estiloLabels = { minimalista: 'Minimalista', moderno: 'Moderno', lujo: 'Lujo', rustico: 'Rustico', elegante: 'Elegante' };
 
-    function Step3Resumen({ form, generatedPrompts, setGeneratedPrompts, addToHistory, onBack, onReset }) {
-      const [copied, setCopied] = useState(false);
-      function handleGenerate() {
-        var prompt = generatePrompts(form);
-        setGeneratedPrompts(prompt);
-        addToHistory({ id: Date.now(), date: new Date().toISOString(), form: Object.assign({}, form), prompts: prompt });
+    const aspectRatioMap = {
+      story: '9:16',
+      reel: '9:16',
+      cuadrado: '1:1',
+      portada: '1:1',
+      semi_vertical: '3:4',
+      horizontal: '16:9',
+    };
+
+    const IMAGE_MODELS = [
+      'gemini-2.5-flash-image',
+      'gemini-3.1-flash-image-preview',
+      'nano-banana-pro-preview',
+      'gemini-3-pro-image-preview',
+    ];
+
+    async function tryModel(prompt, apiKey, model, photoBase64, photoMime) {
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+      var parts = [];
+      if (photoBase64 && photoMime) {
+        parts.push({ inlineData: { mimeType: photoMime, data: photoBase64 } });
       }
+      parts.push({ text: prompt });
+      var body = {
+        contents: [{ parts: parts }],
+        generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
+      };
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        var err = await res.json().catch(function() { return {}; });
+        throw new Error((err.error && err.error.message) || 'Error ' + res.status);
+      }
+      var data = await res.json();
+      var parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      if (!parts) throw new Error('Sin imagen en la respuesta');
+      var imgPart = parts.find(function(p) { return p.inlineData && p.inlineData.data; });
+      if (!imgPart) throw new Error('Sin imagen en la respuesta');
+      return 'data:' + imgPart.inlineData.mimeType + ';base64,' + imgPart.inlineData.data;
+    }
+
+    async function generateImageWithGemini(prompt, apiKey, onStatus, photoBase64, photoMime) {
+      var lastError;
+      for (var i = 0; i < IMAGE_MODELS.length; i++) {
+        var model = IMAGE_MODELS[i];
+        if (onStatus) onStatus('Generando con ' + model + '...');
+        try {
+          var url = await tryModel(prompt, apiKey, model, photoBase64, photoMime);
+          if (onStatus) onStatus(null);
+          return url;
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      throw new Error(lastError ? lastError.message : 'Ningun modelo disponible funciono.');
+    }
+
+    function Step3Resumen({ form, generatedPrompts, setGeneratedPrompts, addToHistory, onBack, onReset, apiKey, onSaveDesign }) {
+      const [copied, setCopied] = useState(false);
+      const [generatingImage, setGeneratingImage] = useState(false);
+      const [generatingStatus, setGeneratingStatus] = useState(null);
+      const [imageUrl, setImageUrl] = useState(null);
+      const [imageError, setImageError] = useState(null);
+
+      useEffect(function() {
+        if (!generatedPrompts) {
+          var prompt = generatePrompts(form);
+          setGeneratedPrompts(prompt);
+          var formForHistory = Object.assign({}, form, { photoBase64: null, photoMime: null, photoPreview: null });
+          addToHistory({ id: Date.now(), date: new Date().toISOString(), form: formForHistory, prompts: prompt });
+        }
+      }, []);
+
+      async function handleGenerateImage() {
+        if (!apiKey) return;
+        setGeneratingImage(true);
+        setImageError(null);
+        setImageUrl(null);
+        try {
+          var url = await generateImageWithGemini(generatedPrompts, apiKey, setGeneratingStatus, form.photoBase64, form.photoMime);
+          setImageUrl(url);
+          if (onSaveDesign) onSaveDesign(url, form.tipoPropiedad + ' — ' + form.precio);
+        } catch (e) {
+          setImageError(e.message || 'Error desconocido al generar la imagen.');
+        } finally {
+          setGeneratingImage(false);
+          setGeneratingStatus(null);
+        }
+      }
+
+      function downloadImage() {
+        var a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'flyer-' + form.tipoPropiedad.toLowerCase().replace(/\s/g, '-') + '-' + Date.now() + '.png';
+        a.click();
+      }
+
       function copyPrompt() { navigator.clipboard.writeText(generatedPrompts); setCopied(true); setTimeout(function() { setCopied(false); }, 1500); }
+
       return (
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-1">Resumen y prompts</h2>
-          <p className="text-slate-500 mb-8">Revisa la info y genera tus prompts.</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-1">Resumen y resultado</h2>
+          <p className="text-slate-500 mb-8">Revisa la info y genera tu flyer.</p>
           <div className="bg-white rounded-xl border border-slate-200 p-6 mb-8 shadow-sm">
             <h3 className="font-semibold text-slate-700 mb-4 text-sm uppercase tracking-wider">Resumen</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -497,30 +904,72 @@ OBJETIVO: Look clasico simetrico y profesional`
                   </div>
                 ); })}
                 <span className="text-sm text-slate-500 ml-2">Estilo:</span>
-                <span className="text-sm font-medium text-indigo-600">{estiloLabels[form.estilo]}</span>
+                <span className="text-sm font-medium text-indigo-600">{estiloLabels[form.estilo]}{styleVariants[form.estilo] && styleVariants[form.estilo].length > 1 ? ' — ' + styleVariants[form.estilo][form.variantIndex || 0].name : ''}</span>
                 <span className="text-sm text-slate-500 ml-2">Tamano:</span>
                 <span className="text-sm font-medium text-indigo-600">{(tamanos.find(function(t) { return t.value === form.tamano; }) || {}).label || form.tamano}</span>
               </div>
             </div>
           </div>
-          {!generatedPrompts && (
-            <div className="text-center mb-8">
-              <button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-10 rounded-xl transition-colors shadow-md text-lg">Generar Prompt</button>
-            </div>
-          )}
+
           {generatedPrompts && (
-            <div>
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
-                  <span className="text-sm font-semibold text-slate-600">Prompt generado</span>
-                  <button onClick={copyPrompt} className={'text-xs font-medium py-1.5 px-4 rounded-md transition-colors ' + (copied ? 'bg-green-100 text-green-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100')}>
-                    {copied ? '✓ Copiado' : 'Copiar'}
+            <div className="space-y-6">
+              {/* Generate image button */}
+              {apiKey ? (
+                <div className="text-center">
+                  <button
+                    onClick={handleGenerateImage}
+                    disabled={generatingImage}
+                    className={'font-semibold py-3 px-10 rounded-xl transition-all shadow-md text-base flex items-center gap-3 mx-auto ' + (generatingImage ? 'bg-slate-400 cursor-not-allowed text-white' : 'bg-violet-600 hover:bg-violet-500 text-white')}
+                  >
+                    {generatingImage ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        <span className="text-sm">{generatingStatus || 'Generando imagen...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Generar imagen con IA
+                      </>
+                    )}
                   </button>
+                  <p className="text-xs text-slate-400 mt-2">Usando Imagen 3 via Google AI Studio</p>
                 </div>
-                <pre className="p-5 text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">{generatedPrompts}</pre>
-              </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                  <p className="text-sm text-amber-700">Agregá tu API key en el panel lateral para generar la imagen directo.</p>
+                </div>
+              )}
+
+              {/* Error */}
+              {imageError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <p className="text-sm font-medium text-red-700 mb-1">Error al generar la imagen</p>
+                  <p className="text-xs text-red-600 font-mono">{imageError}</p>
+                </div>
+              )}
+
+              {/* Generated image */}
+              {imageUrl && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
+                    <span className="text-sm font-semibold text-slate-600">Imagen generada</span>
+                    <button onClick={downloadImage} className="text-xs font-medium py-1.5 px-4 rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-1.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      Descargar
+                    </button>
+                  </div>
+                  <div className="p-4 flex justify-center bg-slate-100">
+                    <img src={imageUrl} alt="Flyer generado" className="max-w-full max-h-[600px] rounded-lg shadow-lg object-contain" />
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
           <div className="flex justify-between mt-10">
             <button onClick={onBack} className="text-slate-600 hover:text-slate-800 font-medium py-2.5 px-6 rounded-lg transition-colors">← Anterior</button>
             {generatedPrompts && (
@@ -534,30 +983,86 @@ OBJETIVO: Look clasico simetrico y profesional`
     // ========================
     // APP
     // ========================
-    const INITIAL_FORM = { precio: '', direccion: '', tipoPropiedad: '', descripcion: '', colorPrincipal: '#1a1a2e', colorSecundario1: '#16213e', colorSecundario2: '#e94560', estilo: 'moderno', tamano: 'story' };
+    const INITIAL_FORM = { precio: '', direccion: '', tipoPropiedad: '', descripcion: '', colorPrincipal: '#1a1a2e', colorSecundario1: '#16213e', colorSecundario2: '#e94560', estilo: 'moderno', variantIndex: 0, tamano: 'story', photoBase64: null, photoMime: null, photoPreview: null };
 
     function loadHistory() { try { return JSON.parse(localStorage.getItem('promptHistory') || '[]'); } catch (e) { return []; } }
+    function loadApiKey() { try { return localStorage.getItem('imageApiKey') || ''; } catch (e) { return ''; } }
+
+    function loadSavedDesigns() {
+      try { return JSON.parse(localStorage.getItem('savedDesigns') || '[]'); } catch(e) { return []; }
+    }
 
     function App() {
       const [step, setStep] = useState(1);
       const [form, setForm] = useState(INITIAL_FORM);
       const [history, setHistory] = useState(loadHistory);
       const [generatedPrompts, setGeneratedPrompts] = useState(null);
+      const [apiKey, setApiKey] = useState(loadApiKey);
+      const [savedDesigns, setSavedDesigns] = useState(loadSavedDesigns);
+
       useEffect(function() { localStorage.setItem('promptHistory', JSON.stringify(history)); }, [history]);
+
+      function handleApiKeyChange(key) { setApiKey(key); localStorage.setItem('imageApiKey', key); }
       function updateField(field, value) { setForm(function(prev) { var n = Object.assign({}, prev); n[field] = value; return n; }); }
       function addToHistory(entry) { setHistory(function(prev) { return [entry].concat(prev).slice(0, 20); }); }
       function loadFromHistory(entry) { setForm(entry.form); setGeneratedPrompts(entry.prompts); setStep(3); }
       function resetForm() { setForm(INITIAL_FORM); setGeneratedPrompts(null); setStep(1); }
+
+      useEffect(function() {
+        var metas = loadSavedDesigns();
+        if (metas.length === 0) return;
+        Promise.all(metas.map(function(d) {
+          return dbGetImage(d.id).then(function(url) { return Object.assign({}, d, { imageUrl: url }); });
+        })).then(function(designs) { setSavedDesigns(designs); });
+      }, []);
+
+      async function handleSaveDesign(imageUrl, label) {
+        var thumbnail = await createThumbnail(imageUrl);
+        var id = Date.now();
+        var entry = { id: id, date: new Date().toISOString(), label: label, thumbnail: thumbnail, imageUrl: imageUrl };
+        await dbSaveImage(id, imageUrl);
+        setSavedDesigns(function(prev) {
+          var next = [entry].concat(prev).slice(0, 30);
+          try {
+            var forStorage = next.map(function(d) { return { id: d.id, date: d.date, label: d.label, thumbnail: d.thumbnail }; });
+            localStorage.setItem('savedDesigns', JSON.stringify(forStorage));
+          } catch(e) {}
+          return next;
+        });
+      }
+
+      async function handleDeleteDesign(id) {
+        if (id === 'all') {
+          await dbDeleteAll();
+          setSavedDesigns([]);
+          localStorage.removeItem('savedDesigns');
+        } else {
+          await dbDeleteImage(id);
+          setSavedDesigns(function(prev) {
+            var next = prev.filter(function(d) { return d.id !== id; });
+            try {
+              var forStorage = next.map(function(d) { return { id: d.id, date: d.date, label: d.label, thumbnail: d.thumbnail }; });
+              localStorage.setItem('savedDesigns', JSON.stringify(forStorage));
+            } catch(e) {}
+            return next;
+          });
+        }
+      }
+
       return (
         <div className="flex h-screen bg-slate-50">
-          <Sidebar history={history} onLoadEntry={loadFromHistory} onNewProject={resetForm} onClearHistory={function() { setHistory([]); }} />
+          <Sidebar
+            history={history} onLoadEntry={loadFromHistory} onNewProject={resetForm} onClearHistory={function() { setHistory([]); }}
+            apiKey={apiKey} onApiKeyChange={handleApiKeyChange}
+            savedDesigns={savedDesigns} onDeleteDesign={handleDeleteDesign}
+          />
           <div className="flex-1 flex flex-col min-w-0">
             <ProgressBar currentStep={step} />
             <main className="flex-1 overflow-y-auto p-6 md:p-10">
               <div className="max-w-3xl mx-auto">
                 {step === 1 && <Step1Textos form={form} updateField={updateField} onNext={function() { setStep(2); }} />}
                 {step === 2 && <Step2Diseno form={form} updateField={updateField} onNext={function() { setStep(3); }} onBack={function() { setStep(1); }} />}
-                {step === 3 && <Step3Resumen form={form} generatedPrompts={generatedPrompts} setGeneratedPrompts={setGeneratedPrompts} addToHistory={addToHistory} onBack={function() { setStep(2); }} onReset={resetForm} />}
+                {step === 3 && <Step3Resumen form={form} generatedPrompts={generatedPrompts} setGeneratedPrompts={setGeneratedPrompts} addToHistory={addToHistory} onBack={function() { setStep(2); }} onReset={resetForm} apiKey={apiKey} onSaveDesign={handleSaveDesign} />}
               </div>
             </main>
           </div>
