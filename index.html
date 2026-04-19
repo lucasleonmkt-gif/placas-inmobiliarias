@@ -317,7 +317,11 @@ OBJETIVO: Look clasico simetrico y profesional`
       var photoSection = data.photoBase64
         ? 'IMAGEN DE LA PROPIEDAD:\n- Se adjunta la foto real de la propiedad. DEBES usarla como imagen principal del flyer, integrandola en la composicion segun el estilo indicado. No ignores esta imagen.'
         : 'IMAGEN DE LA PROPIEDAD:\n- No se proporciono foto. Genera una imagen de fondo apropiada para el tipo de propiedad indicada.';
-      return 'Diseña un flyer inmobiliario profesional de alta calidad para publicar en redes sociales.\n\nESTILO VISUAL: ' + variant.name + '\nReglas de diseno:\n' + variant.rules + '\n\nPALETA DE COLORES (usar exclusivamente):\n- Color principal: ' + colorPrincipal + '\n- Color secundario 1: ' + colorSecundario1 + '\n- Color secundario 2: ' + colorSecundario2 + '\n\nINFORMACION DE LA PROPIEDAD:\n- Tipo: ' + tipoPropiedad + '\n- Precio: ' + precio + '\n- Ubicacion: ' + direccion + '\n- Detalles: ' + descripcion + '\n\n' + photoSection + '\n\nINSTRUCCIONES ADICIONALES:\n- El flyer debe verse como una pieza publicitaria profesional lista para publicar.\n- Mantener coherencia visual completa con el estilo ' + variant.name + '.\n- Formato: ' + tamanoDesc + '.\n- Texto legible, jerarquia visual clara, sin saturar de informacion.';
+      var logoSection = data.logoBase64
+        ? 'LOGO DE LA EMPRESA (OBLIGATORIO):\n- Se adjunta el logo de la empresa como imagen. DEBES incluirlo en el flyer tal como es, sin modificarlo ni alterarlo.\n- Ubicarlo en una zona secundaria segun el estilo (esquina inferior, cabecera, etc.) de forma visible pero sin dominar la composicion.\n- Respetar proporciones y transparencias del logo original.'
+        : '';
+      var tituloHeader = data.titulo && data.titulo.trim() ? '⚠ INSTRUCCION CRITICA: El flyer DEBE mostrar el siguiente titulo como headline principal, con la maxima jerarquia visual posible, grande y prominente: "' + data.titulo.trim() + '". No lo omitas bajo ningun concepto.\n\n' : '';
+      return tituloHeader + 'Diseña un flyer inmobiliario profesional de alta calidad para publicar en redes sociales.\n\nESTILO VISUAL: ' + variant.name + '\nReglas de diseno:\n' + variant.rules + '\n\nPALETA DE COLORES (usar exclusivamente):\n- Color principal: ' + colorPrincipal + '\n- Color secundario 1: ' + colorSecundario1 + '\n- Color secundario 2: ' + colorSecundario2 + '\n\nINFORMACION DE LA PROPIEDAD:\n- Tipo: ' + tipoPropiedad + '\n- Precio: ' + precio + '\n- Ubicacion: ' + direccion + '\n- Detalles: ' + descripcion + '\n\n' + photoSection + (logoSection ? '\n\n' + logoSection : '') + '\n\nINSTRUCCIONES ADICIONALES:\n- El flyer debe verse como una pieza publicitaria profesional lista para publicar.\n- Mantener coherencia visual completa con el estilo ' + variant.name + '.\n- Formato: ' + tamanoDesc + '.\n- Texto legible, jerarquia visual clara, sin saturar de informacion.';
     }
 
     // ========================
@@ -643,6 +647,7 @@ OBJETIVO: Look clasico simetrico y profesional`
           <h2 className="text-2xl font-bold text-slate-800 mb-1">Informacion de la propiedad</h2>
           <p className="text-slate-500 mb-8">Ingresa los datos principales para tus flyers.</p>
           <div className="space-y-5">
+            {inp('titulo', 'Título del flyer', 'Ej: Oportunidad única en el barrio (opcional)')}
             {inp('precio', 'Precio de la propiedad', 'Ej: USD 185.000')}
             {inp('direccion', 'Direccion', 'Ej: Av. Libertador 1234, Buenos Aires')}
             <div>
@@ -674,6 +679,49 @@ OBJETIVO: Look clasico simetrico y profesional`
                     onClick={removePhoto}
                     className="absolute top-2 right-2 bg-white/90 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-full p-1.5 shadow transition-colors"
                     title="Quitar foto"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* LOGO DE LA EMPRESA */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Logo de la empresa <span className="text-slate-400 font-normal">(opcional — se incluye en el flyer)</span>
+              </label>
+              {!form.logoPreview ? (
+                <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors group">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-slate-400 group-hover:text-indigo-400 mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                  <span className="text-sm text-slate-500 group-hover:text-indigo-500 transition-colors">Subir logo de la empresa</span>
+                  <span className="text-xs text-slate-400 mt-1">PNG recomendado (con fondo transparente)</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={function(e) {
+                    var file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                      var dataUrl = ev.target.result;
+                      updateField('logoBase64', dataUrl.split(',')[1]);
+                      updateField('logoMime', file.type);
+                      updateField('logoPreview', dataUrl);
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+              ) : (
+                <div className="relative flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+                  <div className="w-24 h-16 flex items-center justify-center bg-white rounded-lg border border-slate-200 p-2 shrink-0">
+                    <img src={form.logoPreview} alt="Logo de la empresa" className="max-w-full max-h-full object-contain" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-700">Logo cargado</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Se incluira en todos los flyers generados</p>
+                  </div>
+                  <button
+                    onClick={function() { updateField('logoBase64', null); updateField('logoMime', null); updateField('logoPreview', null); }}
+                    className="shrink-0 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-full p-1.5 border border-slate-200 shadow-sm transition-colors"
+                    title="Quitar logo"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
@@ -724,7 +772,7 @@ OBJETIVO: Look clasico simetrico y profesional`
       return (
         <div>
           <h2 className="text-2xl font-bold text-slate-800 mb-1">Diseño visual</h2>
-          <p className="text-slate-500 mb-8">Defini la paleta de colores y el estilo de tus flyers.</p>
+          <p className="text-slate-500 mb-8">Defini la paleta de colores y el formato de tus flyers.</p>
           <div className="space-y-5 mb-10">
             <ColorInput label="Color principal" value={form.colorPrincipal} onChange={function(v) { updateField('colorPrincipal', v); }} />
             <ColorInput label="Color secundario 1" value={form.colorSecundario1} onChange={function(v) { updateField('colorSecundario1', v); }} />
@@ -744,29 +792,6 @@ OBJETIVO: Look clasico simetrico y profesional`
               {tamanos.map(function(t) { return <option key={t.value} value={t.value}>{t.label} — {t.desc}</option>; })}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">Estilo de diseño</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {estilos.map(function(s) { return (
-                <button key={s.value} onClick={function() { updateField('estilo', s.value); updateField('variantIndex', 0); }} className={'text-left px-4 py-3.5 rounded-xl border-2 transition-all ' + (form.estilo === s.value ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300 bg-white')}>
-                  <p className={'font-semibold text-sm ' + (form.estilo === s.value ? 'text-indigo-700' : 'text-slate-700')}>{s.label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{s.desc}</p>
-                </button>
-              ); })}
-            </div>
-            {styleVariants[form.estilo] && styleVariants[form.estilo].length > 1 && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Variante de estilo</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {styleVariants[form.estilo].map(function(v, i) { return (
-                    <button key={i} onClick={function() { updateField('variantIndex', i); }} className={'text-left px-4 py-3 rounded-lg border-2 transition-all ' + (form.variantIndex === i ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300 bg-white')}>
-                      <p className={'font-semibold text-sm ' + (form.variantIndex === i ? 'text-indigo-700' : 'text-slate-700')}>{v.name}</p>
-                    </button>
-                  ); })}
-                </div>
-              </div>
-            )}
-          </div>
           <div className="flex justify-between mt-10">
             <button onClick={onBack} className="text-slate-600 hover:text-slate-800 font-medium py-2.5 px-6 rounded-lg transition-colors">← Anterior</button>
             <button onClick={onNext} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-sm">Siguiente →</button>
@@ -778,6 +803,110 @@ OBJETIVO: Look clasico simetrico y profesional`
     // ========================
     // STEP 3
     // ========================
+    const ESTILOS_LIST = [
+      { value: 'minimalista', label: 'Minimalista', desc: 'Limpio, espacioso, sin ruido visual', variantIndex: 0 },
+      { value: 'moderno', label: 'Moderno', desc: 'Geometrico, bold, tech-forward', variantIndex: 0 },
+      { value: 'lujo', label: 'Lujo clasico', desc: 'Dorado, exclusivo, premium', variantIndex: 0 },
+      { value: 'lujo', label: 'Lujo editorial nocturno', desc: 'Editorial, nocturno, aspiracional', variantIndex: 1 },
+      { value: 'rustico', label: 'Rustico', desc: 'Calido, natural, texturas organicas', variantIndex: 0 },
+      { value: 'elegante', label: 'Elegante', desc: 'Sofisticado, clasico, refinado', variantIndex: 0 },
+    ];
+
+    function StyleGeneratorBox({ estilo, form, apiKey, onSaveDesign }) {
+      const [generating, setGenerating] = useState(false);
+      const [status, setStatus] = useState(null);
+      const [imageUrl, setImageUrl] = useState(null);
+      const [error, setError] = useState(null);
+
+      async function handleGenerate() {
+        if (!apiKey) return;
+        setGenerating(true);
+        setError(null);
+        setImageUrl(null);
+        var promptData = Object.assign({}, form, { estilo: estilo.value, variantIndex: estilo.variantIndex || 0 });
+        var prompt = generatePrompts(promptData);
+        try {
+          var url = await generateImageWithGemini(prompt, apiKey, setStatus, form.photoBase64, form.photoMime, form.logoBase64, form.logoMime, aspectRatioMap[form.tamano] || '1:1');
+          setImageUrl(url);
+          if (onSaveDesign) onSaveDesign(url, estilo.label + ' — ' + form.tipoPropiedad + ' — ' + form.precio);
+        } catch (e) {
+          setError(e.message || 'Error desconocido');
+        } finally {
+          setGenerating(false);
+          setStatus(null);
+        }
+      }
+
+      function downloadImage() {
+        var a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'flyer-' + estilo.value + '-' + Date.now() + '.png';
+        a.click();
+      }
+
+      return (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-700">{estilo.label}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{estilo.desc}</p>
+            </div>
+            {apiKey ? (
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className={'font-medium py-2 px-5 rounded-lg transition-all text-sm flex items-center gap-2 shrink-0 ' + (generating ? 'bg-slate-300 cursor-not-allowed text-white' : 'bg-violet-600 hover:bg-violet-500 text-white shadow-sm')}
+              >
+                {generating ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <span>Generando...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    Generar con IA
+                  </>
+                )}
+              </button>
+            ) : (
+              <span className="text-xs text-amber-600 font-medium shrink-0">Sin API key</span>
+            )}
+          </div>
+          {generating && status && (
+            <div className="px-5 py-3 bg-violet-50 border-b border-violet-100">
+              <p className="text-xs text-violet-600">{status}</p>
+            </div>
+          )}
+          {error && (
+            <div className="px-5 py-3 bg-red-50 border-b border-red-100">
+              <p className="text-xs text-red-600 font-mono">{error}</p>
+            </div>
+          )}
+          {imageUrl ? (
+            <div>
+              <div className="p-4 flex justify-center bg-slate-100">
+                <img src={imageUrl} alt={'Flyer ' + estilo.label} className="max-w-full max-h-[500px] rounded-lg shadow-lg object-contain" />
+              </div>
+              <div className="px-5 py-3 border-t border-slate-100 flex justify-end">
+                <button onClick={downloadImage} className="text-xs font-medium py-1.5 px-4 rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Descargar
+                </button>
+              </div>
+            </div>
+          ) : !generating && !error && (
+            <div className="px-5 py-10 flex justify-center items-center text-slate-200">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     const estiloLabels = { minimalista: 'Minimalista', moderno: 'Moderno', lujo: 'Lujo', rustico: 'Rustico', elegante: 'Elegante' };
 
     const aspectRatioMap = {
@@ -796,16 +925,21 @@ OBJETIVO: Look clasico simetrico y profesional`
       'gemini-3-pro-image-preview',
     ];
 
-    async function tryModel(prompt, apiKey, model, photoBase64, photoMime) {
+    async function tryModel(prompt, apiKey, model, photoBase64, photoMime, logoBase64, logoMime, aspectRatio) {
       var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
       var parts = [];
       if (photoBase64 && photoMime) {
         parts.push({ inlineData: { mimeType: photoMime, data: photoBase64 } });
       }
+      if (logoBase64 && logoMime) {
+        parts.push({ inlineData: { mimeType: logoMime, data: logoBase64 } });
+      }
       parts.push({ text: prompt });
+      var genConfig = { responseModalities: ['IMAGE', 'TEXT'] };
+      if (aspectRatio) genConfig.aspectRatio = aspectRatio;
       var body = {
         contents: [{ parts: parts }],
-        generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
+        generationConfig: genConfig
       };
       var res = await fetch(url, {
         method: 'POST',
@@ -824,13 +958,13 @@ OBJETIVO: Look clasico simetrico y profesional`
       return 'data:' + imgPart.inlineData.mimeType + ';base64,' + imgPart.inlineData.data;
     }
 
-    async function generateImageWithGemini(prompt, apiKey, onStatus, photoBase64, photoMime) {
+    async function generateImageWithGemini(prompt, apiKey, onStatus, photoBase64, photoMime, logoBase64, logoMime, aspectRatio) {
       var lastError;
       for (var i = 0; i < IMAGE_MODELS.length; i++) {
         var model = IMAGE_MODELS[i];
         if (onStatus) onStatus('Generando con ' + model + '...');
         try {
-          var url = await tryModel(prompt, apiKey, model, photoBase64, photoMime);
+          var url = await tryModel(prompt, apiKey, model, photoBase64, photoMime, logoBase64, logoMime, aspectRatio);
           if (onStatus) onStatus(null);
           return url;
         } catch (e) {
@@ -840,52 +974,16 @@ OBJETIVO: Look clasico simetrico y profesional`
       throw new Error(lastError ? lastError.message : 'Ningun modelo disponible funciono.');
     }
 
-    function Step3Resumen({ form, generatedPrompts, setGeneratedPrompts, addToHistory, onBack, onReset, apiKey, onSaveDesign }) {
-      const [copied, setCopied] = useState(false);
-      const [generatingImage, setGeneratingImage] = useState(false);
-      const [generatingStatus, setGeneratingStatus] = useState(null);
-      const [imageUrl, setImageUrl] = useState(null);
-      const [imageError, setImageError] = useState(null);
-
+    function Step3Resumen({ form, addToHistory, onBack, onReset, apiKey, onSaveDesign }) {
       useEffect(function() {
-        if (!generatedPrompts) {
-          var prompt = generatePrompts(form);
-          setGeneratedPrompts(prompt);
-          var formForHistory = Object.assign({}, form, { photoBase64: null, photoMime: null, photoPreview: null });
-          addToHistory({ id: Date.now(), date: new Date().toISOString(), form: formForHistory, prompts: prompt });
-        }
+        var formForHistory = Object.assign({}, form, { photoBase64: null, photoMime: null, photoPreview: null, logoBase64: null, logoMime: null, logoPreview: null });
+        addToHistory({ id: Date.now(), date: new Date().toISOString(), form: formForHistory });
       }, []);
-
-      async function handleGenerateImage() {
-        if (!apiKey) return;
-        setGeneratingImage(true);
-        setImageError(null);
-        setImageUrl(null);
-        try {
-          var url = await generateImageWithGemini(generatedPrompts, apiKey, setGeneratingStatus, form.photoBase64, form.photoMime);
-          setImageUrl(url);
-          if (onSaveDesign) onSaveDesign(url, form.tipoPropiedad + ' — ' + form.precio);
-        } catch (e) {
-          setImageError(e.message || 'Error desconocido al generar la imagen.');
-        } finally {
-          setGeneratingImage(false);
-          setGeneratingStatus(null);
-        }
-      }
-
-      function downloadImage() {
-        var a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = 'flyer-' + form.tipoPropiedad.toLowerCase().replace(/\s/g, '-') + '-' + Date.now() + '.png';
-        a.click();
-      }
-
-      function copyPrompt() { navigator.clipboard.writeText(generatedPrompts); setCopied(true); setTimeout(function() { setCopied(false); }, 1500); }
 
       return (
         <div>
           <h2 className="text-2xl font-bold text-slate-800 mb-1">Resumen y resultado</h2>
-          <p className="text-slate-500 mb-8">Revisa la info y genera tu flyer.</p>
+          <p className="text-slate-500 mb-8">Revisa la info y generá tu flyer en el estilo que prefieras.</p>
           <div className="bg-white rounded-xl border border-slate-200 p-6 mb-8 shadow-sm">
             <h3 className="font-semibold text-slate-700 mb-4 text-sm uppercase tracking-wider">Resumen</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -903,78 +1001,29 @@ OBJETIVO: Look clasico simetrico y profesional`
                     <span className="text-xs font-mono text-slate-600">{c}</span>
                   </div>
                 ); })}
-                <span className="text-sm text-slate-500 ml-2">Estilo:</span>
-                <span className="text-sm font-medium text-indigo-600">{estiloLabels[form.estilo]}{styleVariants[form.estilo] && styleVariants[form.estilo].length > 1 ? ' — ' + styleVariants[form.estilo][form.variantIndex || 0].name : ''}</span>
                 <span className="text-sm text-slate-500 ml-2">Tamano:</span>
                 <span className="text-sm font-medium text-indigo-600">{(tamanos.find(function(t) { return t.value === form.tamano; }) || {}).label || form.tamano}</span>
               </div>
             </div>
           </div>
 
-          {generatedPrompts && (
-            <div className="space-y-6">
-              {/* Generate image button */}
-              {apiKey ? (
-                <div className="text-center">
-                  <button
-                    onClick={handleGenerateImage}
-                    disabled={generatingImage}
-                    className={'font-semibold py-3 px-10 rounded-xl transition-all shadow-md text-base flex items-center gap-3 mx-auto ' + (generatingImage ? 'bg-slate-400 cursor-not-allowed text-white' : 'bg-violet-600 hover:bg-violet-500 text-white')}
-                  >
-                    {generatingImage ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                        <span className="text-sm">{generatingStatus || 'Generando imagen...'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                        Generar imagen con IA
-                      </>
-                    )}
-                  </button>
-                  <p className="text-xs text-slate-400 mt-2">Usando Imagen 3 via Google AI Studio</p>
-                </div>
-              ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-                  <p className="text-sm text-amber-700">Agregá tu API key en el panel lateral para generar la imagen directo.</p>
-                </div>
-              )}
-
-              {/* Error */}
-              {imageError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <p className="text-sm font-medium text-red-700 mb-1">Error al generar la imagen</p>
-                  <p className="text-xs text-red-600 font-mono">{imageError}</p>
-                </div>
-              )}
-
-              {/* Generated image */}
-              {imageUrl && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
-                    <span className="text-sm font-semibold text-slate-600">Imagen generada</span>
-                    <button onClick={downloadImage} className="text-xs font-medium py-1.5 px-4 rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-1.5">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                      Descargar
-                    </button>
-                  </div>
-                  <div className="p-4 flex justify-center bg-slate-100">
-                    <img src={imageUrl} alt="Flyer generado" className="max-w-full max-h-[600px] rounded-lg shadow-lg object-contain" />
-                  </div>
-                </div>
-              )}
+          {!apiKey && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center mb-6">
+              <p className="text-sm text-amber-700">Agregá tu API key en el panel lateral para generar imágenes.</p>
             </div>
           )}
 
+          <div className="space-y-5">
+            {ESTILOS_LIST.map(function(estilo, i) {
+              return (
+                <StyleGeneratorBox key={estilo.value + '-' + i} estilo={estilo} form={form} apiKey={apiKey} onSaveDesign={onSaveDesign} />
+              );
+            })}
+          </div>
+
           <div className="flex justify-between mt-10">
             <button onClick={onBack} className="text-slate-600 hover:text-slate-800 font-medium py-2.5 px-6 rounded-lg transition-colors">← Anterior</button>
-            {generatedPrompts && (
-              <button onClick={onReset} className="bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-sm">Nuevo proyecto</button>
-            )}
+            <button onClick={onReset} className="bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 px-8 rounded-lg transition-colors shadow-sm">Nuevo proyecto</button>
           </div>
         </div>
       );
@@ -983,7 +1032,7 @@ OBJETIVO: Look clasico simetrico y profesional`
     // ========================
     // APP
     // ========================
-    const INITIAL_FORM = { precio: '', direccion: '', tipoPropiedad: '', descripcion: '', colorPrincipal: '#1a1a2e', colorSecundario1: '#16213e', colorSecundario2: '#e94560', estilo: 'moderno', variantIndex: 0, tamano: 'story', photoBase64: null, photoMime: null, photoPreview: null };
+    const INITIAL_FORM = { titulo: '', precio: '', direccion: '', tipoPropiedad: '', descripcion: '', colorPrincipal: '#1a1a2e', colorSecundario1: '#16213e', colorSecundario2: '#e94560', estilo: 'moderno', variantIndex: 0, tamano: 'story', photoBase64: null, photoMime: null, photoPreview: null, logoBase64: null, logoMime: null, logoPreview: null };
 
     function loadHistory() { try { return JSON.parse(localStorage.getItem('promptHistory') || '[]'); } catch (e) { return []; } }
     function loadApiKey() { try { return localStorage.getItem('imageApiKey') || ''; } catch (e) { return ''; } }
@@ -1062,7 +1111,7 @@ OBJETIVO: Look clasico simetrico y profesional`
               <div className="max-w-3xl mx-auto">
                 {step === 1 && <Step1Textos form={form} updateField={updateField} onNext={function() { setStep(2); }} />}
                 {step === 2 && <Step2Diseno form={form} updateField={updateField} onNext={function() { setStep(3); }} onBack={function() { setStep(1); }} />}
-                {step === 3 && <Step3Resumen form={form} generatedPrompts={generatedPrompts} setGeneratedPrompts={setGeneratedPrompts} addToHistory={addToHistory} onBack={function() { setStep(2); }} onReset={resetForm} apiKey={apiKey} onSaveDesign={handleSaveDesign} />}
+                {step === 3 && <Step3Resumen form={form} addToHistory={addToHistory} onBack={function() { setStep(2); }} onReset={resetForm} apiKey={apiKey} onSaveDesign={handleSaveDesign} />}
               </div>
             </main>
           </div>
