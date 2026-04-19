@@ -936,7 +936,6 @@ OBJETIVO: Look clasico simetrico y profesional`
       }
       parts.push({ text: prompt });
       var genConfig = { responseModalities: ['IMAGE', 'TEXT'] };
-      if (aspectRatio) genConfig.aspectRatio = aspectRatio;
       var body = {
         contents: [{ parts: parts }],
         generationConfig: genConfig
